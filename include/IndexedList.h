@@ -769,6 +769,7 @@ template<typename Container,
         using base_type::operator--;
 
         typename base_type::reference operator*() const {
+            checkIteratorNotEmpty();
             INDEXED_LIST_CONTRACT_ASSERT(
                 node->parent != nullptr, "Cannot dereference end iterator");
             
@@ -780,6 +781,7 @@ template<typename Container,
         }
 
         this_type& operator++() {
+            checkIteratorNotEmpty();
             node = node->getNextNodeInOrder();
 
             INDEXED_LIST_CONTRACT_ASSERT(
@@ -789,6 +791,7 @@ template<typename Container,
         }
 
         this_type& operator--() {
+            checkIteratorNotEmpty();
             node = node->getPrevNodeInOrder();
 
             INDEXED_LIST_CONTRACT_ASSERT(
@@ -798,6 +801,7 @@ template<typename Container,
         }
 
         this_type& operator+=(typename base_type::difference_type distance) {
+            checkIteratorNotEmpty();
             INDEXED_LIST_CONTRACT_ASSERT(
                 /*TODO*/true,
                 "Iterator moves beyond valid range");
@@ -807,6 +811,8 @@ template<typename Container,
 
         typename base_type::difference_type
         operator-(const this_type& other) const {
+            checkIteratorNotEmpty();
+            other.checkIteratorNotEmpty();
             return node->getPositionInTree() - other.node->getPositionInTree();
         }
 
@@ -825,7 +831,14 @@ template<typename Container,
         IndexedListIterator(NodeBase* node) : node(node) {}
 
     private:
+        void checkIteratorNotEmpty() const {
+            INDEXED_LIST_CONTRACT_ASSERT(
+                node != nullptr,
+                "Cannot operate on default-constructed iterator");
+        }
+
         NodeBase* node = nullptr;
+
         friend Container;
         friend IndexedListIterator<Container, std::remove_const_t<ValueType>>;
 };
