@@ -499,7 +499,9 @@ public:
 
     Node* extractAll() {
         Node* node = head_.left;
-        node->parent = nullptr;
+        if (node != nullptr) {
+            node->parent = nullptr;
+        }
         initHead();
         return node;
     }
@@ -1338,6 +1340,10 @@ inline IndexedList<T>::IndexedList(InputIt first, InputIt last)
 template<typename T>
 inline IndexedList<T>::IndexedList(const IndexedList& other)
 {
+    static_assert(std::copy_constructible<T>,
+        "To make a copy of the container, its value type must be "
+        "copy-constructible");
+
     INDEXED_LIST_CONTRACT_ASSERT(
         &other != this, "You can't initialize an item with itself");
     auto cloner = getNodeCloner();
@@ -1355,6 +1361,10 @@ template<typename T>
 inline IndexedList<T>&
 IndexedList<T>::operator=(const IndexedList& other)
 {
+    static_assert(std::copy_constructible<T>,
+        "To make a copy of the container, its value type must be "
+        "copy-constructible");
+
     if (&other == this) {
         return *this;
     }
@@ -1393,7 +1403,7 @@ IndexedList<T>::assign(InputIt first, InputIt last)
 {
     static_assert(
         std::is_constructible<T, decltype(*first)>::value,
-        "Cannot construct container objectc from given iterator");
+        "Cannot construct container object from given iterator");
     checkIteratorNotFromContainer(first, last);
     clear();
     for (; first != last; ++first) {
@@ -1699,12 +1709,13 @@ template<typename InputIt>
 inline void
 IndexedList<T>::checkIteratorNotFromContainer(InputIt first, InputIt last) const
 {
+    auto getAddress = [](auto&& v) { return &v; };
 // I don't even hope that the optimizer will remove it by itself
 #if INDEXED_LIST_CHECK_PRECONDITIONS
     if (first == last) return;
     for (const auto& el : *this) {
         INDEXED_LIST_CONTRACT_ASSERT(
-            &(*first) == &el, "Invalid iterator range");
+            getAddress(*first) == &el, "Invalid iterator range");
     }
 #endif
 }
