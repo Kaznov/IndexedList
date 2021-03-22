@@ -1341,10 +1341,6 @@ inline IndexedList<T>::IndexedList(InputIt first, InputIt last)
 template<typename T>
 inline IndexedList<T>::IndexedList(const IndexedList& other)
 {
-    static_assert(std::copy_constructible<T>,
-        "To make a copy of the container, its value type must be "
-        "copy-constructible");
-
     INDEXED_LIST_CONTRACT_ASSERT(
         &other != this, "You can't initialize an item with itself");
     auto cloner = getNodeCloner();
@@ -1362,10 +1358,6 @@ template<typename T>
 inline IndexedList<T>&
 IndexedList<T>::operator=(const IndexedList& other)
 {
-    static_assert(std::copy_constructible<T>,
-        "To make a copy of the container, its value type must be "
-        "copy-constructible");
-
     if (&other == this) {
         return *this;
     }
@@ -1598,7 +1590,8 @@ IndexedList<T>::emplace(const_iterator pos, Args&& ...args)
 {
     checkIteratorIsValid(pos);
     NodeBase* node = getNewNode(std::forward<Args>(args)...);
-    insertNodeBefore(node, pos.node);
+    NodeBase* pos_node = getNotConstNode(pos.node);
+    impl_.insertNodeBefore(node, pos_node);
     return iterator(node);
 }
 

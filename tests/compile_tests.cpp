@@ -199,6 +199,9 @@ void indexedListConstIterators() {
     Cit it2 = l1.begin();
     Cit it3 = l1.end();
 
+    Cit it4 = l1.cbegin();
+    Cit it5 = l1.cend();
+
     // incrementation, decrementaion, movement
     ++it1;
     --it1;
@@ -262,4 +265,58 @@ void indexedListIteratorPack() {
     indexedListIterators<COT>();
     indexedListConstIterators<COT>();
     indexedListConstAndNonConstIterators<COT>();
+}
+
+void indexedListInserts() {
+    IL<int> l1;
+    IL<MOT> l2;
+    IL<COT> l3;
+
+    typename IL<int>::const_iterator cit1 = l1.end();
+    typename IL<MOT>::const_iterator cit2 = l2.end();
+    typename IL<COT>::const_iterator cit3 = l3.end();
+
+    // emplace
+    l1.emplace(cit1);
+    l2.emplace(cit2);
+    l3.emplace(cit3);
+
+    int v1;
+    MOT v2;
+    COT v3;
+
+    // insert via copy (const&)
+    l1.insert(cit1, v1);
+    // l2.insert(cit2, v2);  // <== doesn't compile
+    // l3.insert(cit3, v3);  // <== doesn't compile
+
+    // insert via move
+    l1.insert(cit1, std::move(v1));
+    l2.insert(cit2, std::move(v2));
+    // l3.insert(cit3, std::move(v3));  // <== doesn't compile
+
+    // insert of temporary
+    l1.insert(cit1, int{});
+    l2.insert(cit2, MOT{});
+    // l3.insert(cit3, COT{});  // <== doesn't compile
+
+    // emplace_at
+    l1.emplace_at(0);
+    l2.emplace_at(0);
+    l3.emplace_at(0);
+
+    // insert_at via copy (const&)
+    l1.insert_at(0, v1);
+    // l2.insert(cit2, v2);  // <== doesn't compile
+    // l3.insert(cit3, v3);  // <== doesn't compile
+
+    // insert via move
+    l1.insert_at(0, std::move(v1));
+    l2.insert_at(0, std::move(v2));
+    // l3.insert(cit3, std::move(v3));  // <== doesn't compile
+
+    // insert of temporary
+    l1.insert_at(0, int{});
+    l2.insert_at(0, MOT{});
+    // l3.insert(cit3, COT{});  // <== doesn't compile
 }
