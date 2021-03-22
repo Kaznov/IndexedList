@@ -3,6 +3,9 @@
 
 #include "IndexedList.h"
 
+#include <iterator>
+#include <type_traits>
+
 // Note, that some of the tests contain "Does not compile" lines.
 // One would think, that checks like that could be done with type_traits,
 // or custom SFINAE constructs. However, using these methods would yield
@@ -10,6 +13,8 @@
 // they would fail to compile, they still participate in overload resolution.
 // Because of that checks like "std::is_copy_constructible" will always return
 // true, same as for standard library containers.
+
+// For now only tests with types with trivial constructors / assignments
 
 #if defined(__cpp_lib_concepts)
 #include <ranges>
@@ -64,6 +69,18 @@ struct CreateOnlyType {
     CreateOnlyType& operator=(CreateOnlyType&& other) = delete;
     ~CreateOnlyType() = default;
 };
+
+template<class T> struct is_const_lreference : std::false_type {};
+template<class T> struct is_const_lreference<T&&> : std::false_type {};
+template<class T> struct is_const_lreference<T&> : std::false_type {};
+template<class T> struct is_const_lreference<const T&&> : std::false_type {};
+template<class T> struct is_const_lreference<const T&> : std::true_type {};
+
+template<class T> struct is_mutable_lreference : std::false_type {};
+template<class T> struct is_mutable_lreference<T&&> : std::false_type {};
+template<class T> struct is_mutable_lreference<T&> : std::true_type {};
+template<class T> struct is_mutable_lreference<const T&&> : std::false_type {};
+template<class T> struct is_mutable_lreference<const T&> : std::false_type {};
 
 using MOT = MoveOnlyType;
 using COT = CreateOnlyType;
@@ -156,6 +173,9 @@ void indexedListIterators() {
     It it2 = l1.begin();
     It it3 = l1.end();
 
+    // direct iterator getter
+    It it4 = l1.iterator_at(0);
+
     // incrementation, decrementaion, movement
     ++it1;
     --it1;
@@ -181,10 +201,14 @@ void indexedListIterators() {
     (void)(it1 >= it2);
 
     static_assert(
-        !std::is_const<std::remove_reference_t<decltype(*it1)>>::value,
+        is_mutable_lreference<decltype(*it1)>::value,
         "dereferencing non-const iterator must return non-const reference");
-    static_assert(std::is_reference<decltype(*it1)>::value,
-        "dereferencing non-const iterator must return non-const reference");
+
+    for (auto&& el : l1) {
+        static_assert(
+            is_mutable_lreference<decltype(el)>::value,
+            "dereferencing non-const iterator must return non-const reference");
+    }
 }
 
 template <typename T>
@@ -202,6 +226,9 @@ void indexedListConstIterators() {
     Cit it4 = l1.cbegin();
     Cit it5 = l1.cend();
 
+    // direct iterator getter
+    Cit it6 = l1.iterator_at(0);
+
     // incrementation, decrementaion, movement
     ++it1;
     --it1;
@@ -227,10 +254,14 @@ void indexedListConstIterators() {
     (void)(it1 >= it2);
 
     static_assert(
-        std::is_const<std::remove_reference_t<decltype(*it1)>>::value,
+        is_const_lreference<decltype(*it1)>::value,
         "dereferencing const iterator must return const reference");
-    static_assert(std::is_reference<decltype(*it1)>::value,
-        "dereferencing const iterator must return const reference");
+
+    for (auto&& el : l1) {
+        static_assert(
+            is_const_lreference<decltype(el)>::value,
+            "dereferencing const iterator must return const reference");
+    }
 }
 
 template <typename T>
@@ -307,16 +338,95 @@ void indexedListInserts() {
 
     // insert_at via copy (const&)
     l1.insert_at(0, v1);
-    // l2.insert(cit2, v2);  // <== doesn't compile
-    // l3.insert(cit3, v3);  // <== doesn't compile
+    // l2.insert_at(0, v2);  // <== doesn't compile
+    // l3.insert_at(0, v3);  // <== doesn't compile
 
-    // insert via move
+    // insert_at via move
     l1.insert_at(0, std::move(v1));
     l2.insert_at(0, std::move(v2));
-    // l3.insert(cit3, std::move(v3));  // <== doesn't compile
+    // l3.insert_at(0, std::move(v3));  // <== doesn't compile
 
-    // insert of temporary
+    // insert_at of temporary
     l1.insert_at(0, int{});
     l2.insert_at(0, MOT{});
-    // l3.insert(cit3, COT{});  // <== doesn't compile
+    // l3.insert_at(0, COT{});  // <== doesn't compile
+}
+
+void indexedListErasures() {
+    IL<int> l1;
+    IL<MOT> l2;
+    IL<COT> l3;
+
+    l1.clear();
+    l2.clear();
+    l3.clear();
+
+    typename IL<int>::const_iterator cit1 = l1.end();
+    typename IL<MOT>::const_iterator cit2 = l2.end();
+    typename IL<COT>::const_iterator cit3 = l3.end();
+
+    // single element erasure
+    l1.erase(cit1);
+    l2.erase(cit2);
+    l3.erase(cit3);
+
+    // single element positional erasure
+    l1.erase_at(0);
+    l2.erase_at(0);
+    l3.erase_at(0);
+
+    // multi element erasure
+    l1.erase(cit1, cit1);
+    l2.erase(cit2, cit2);
+    l3.erase(cit3, cit3);
+
+    // multi element positional erasure
+    l1.erase_at(0, 1);
+    l2.erase_at(0, 1);
+    l3.erase_at(0, 1);
+}
+
+void indexedListElementAccess() {
+    IL<int> l1;
+    IL<MOT> l2;
+    IL<COT> l3;
+    const IL<int> l4;
+    const IL<MOT> l5;
+    const IL<COT> l6;
+
+    (void)l1[0];
+    (void)l2[0];
+    (void)l3[0];
+    (void)l4[0];
+    (void)l5[0];
+    (void)l6[0];
+
+    static_assert(is_mutable_lreference<decltype(l1[0])>::value, "");
+    static_assert(is_mutable_lreference<decltype(l2[0])>::value, "");
+    static_assert(is_mutable_lreference<decltype(l3[0])>::value, "");
+    static_assert(is_const_lreference<decltype(l4[0])>::value, "");
+    static_assert(is_const_lreference<decltype(l5[0])>::value, "");
+    static_assert(is_const_lreference<decltype(l6[0])>::value, "");
+
+    int v1;
+    MOT v2;
+    COT v3;
+
+    // getting value via []
+    v1 = l1[0];
+    // v2 = l2[0];  // <== doesn't compile
+    // v3 = l3[0];  // <== doesn't compile
+
+    v1 = std::move(l1[0]);
+    v2 = std::move(l2[0]);
+    // v3 = std::move(l3[0]);  // <== doesn't compile
+
+    // setting value via []
+    l1[0] = v1;
+    // l2[0] = v2;  // <== doesn't compile
+    // l3[0] = v3;  // <== doesn't compile
+
+    l1[0] = std::move(v1);
+    l2[0] = std::move(v2);
+    // l3[0] = std::move(v3);  // <== doesn't compile
 }
