@@ -1,4 +1,15 @@
+// This file contains a bunch of static assertions and compilation checks
+// It should not be executed
+
 #include "IndexedList.h"
+
+// Note, that some of the tests contain "Does not compile" lines.
+// One would think, that checks like that could be done with type_traits,
+// or custom SFINAE constructs. However, using these methods would yield
+// false positives: the IndexedLists methods are not SFINAE-d out, so even if
+// they would fail to compile, they still participate in overload resolution.
+// Because of that checks like "std::is_copy_constructible" will always return
+// true, same as for standard library containers.
 
 #if defined(__cpp_lib_concepts)
 #include <ranges>
@@ -117,4 +128,138 @@ void indexedListAssignment() {
         std::make_move_iterator(l2b.end()));
     /*l3a.assign(std::make_move_iterator(l3b.begin()),  // <== doesn't compile
         std::make_move_iterator(l3b.end()));*/
+}
+
+void indexedListCapacity() {
+    const IL<int> l1;
+    const IL<MOT> l2;
+    const IL<COT> l3;
+
+    size_t s1 = l1.size();
+    size_t s2 = l2.size();
+    size_t s3 = l3.size();
+
+    bool e1 = l1.empty();
+    bool e2 = l2.empty();
+    bool e3 = l3.empty();
+}
+
+template <typename T>
+void indexedListIterators() {
+    IL<T> l1;
+
+    using It = typename IL<T>::iterator;
+    // default constructor
+    It it1;
+
+    // begin() / end()
+    It it2 = l1.begin();
+    It it3 = l1.end();
+
+    // incrementation, decrementaion, movement
+    ++it1;
+    --it1;
+    it1++;
+    it1--;
+
+    it1 += 1;
+    it1 += -1;
+    it1 -= 1;
+    it1 -= -1;
+
+    (void)(it1 + 1);
+    (void)(it1 - 1);
+    (void)(it1 + -1);
+    (void)(it1 - -1);
+    (void)(it1 - it2);
+
+    (void)(it1 == it2);
+    (void)(it1 != it2);
+    (void)(it1 < it2);
+    (void)(it1 <= it2);
+    (void)(it1 > it2);
+    (void)(it1 >= it2);
+
+    static_assert(
+        !std::is_const<std::remove_reference_t<decltype(*it1)>>::value,
+        "dereferencing non-const iterator must return non-const reference");
+    static_assert(std::is_reference<decltype(*it1)>::value,
+        "dereferencing non-const iterator must return non-const reference");
+}
+
+template <typename T>
+void indexedListConstIterators() {
+    const IL<T> l1;
+
+    using Cit = typename IL<T>::const_iterator;
+    // default constructor
+    Cit it1;
+
+    // begin() / end()
+    Cit it2 = l1.begin();
+    Cit it3 = l1.end();
+
+    // incrementation, decrementaion, movement
+    ++it1;
+    --it1;
+    it1++;
+    it1--;
+
+    it1 += 1;
+    it1 += -1;
+    it1 -= 1;
+    it1 -= -1;
+
+    (void)(it1 + 1);
+    (void)(it1 - 1);
+    (void)(it1 + -1);
+    (void)(it1 - -1);
+    (void)(it1 - it2);
+
+    (void)(it1 == it2);
+    (void)(it1 != it2);
+    (void)(it1 < it2);
+    (void)(it1 <= it2);
+    (void)(it1 > it2);
+    (void)(it1 >= it2);
+
+    static_assert(
+        std::is_const<std::remove_reference_t<decltype(*it1)>>::value,
+        "dereferencing const iterator must return const reference");
+    static_assert(std::is_reference<decltype(*it1)>::value,
+        "dereferencing const iterator must return const reference");
+}
+
+template <typename T>
+void indexedListConstAndNonConstIterators() {
+    using It = typename IL<T>::iterator;
+    using Cit = typename IL<T>::const_iterator;
+
+    It it1;
+    Cit cit1;
+
+    // copy-constructor const_iterator from iterator
+    Cit cit2 = it1;
+    Cit cit3(it1);
+
+    // copy-assignment const_iterator from iterator
+    cit2 = it1;
+
+    // copy-constructor iterator from const_iterator
+    // It it2 = cit1;  // <== doesn't compile
+    // It it3(cit1);  // <== doesn't compile
+    // copy-assignment iterator from const_iterator
+    // it2 = cit1;  // <== doesn't compile
+}
+
+void indexedListIteratorPack() {
+    indexedListIterators<int>();
+    indexedListConstIterators<int>();
+    indexedListConstAndNonConstIterators<int>();
+    indexedListIterators<MOT>();
+    indexedListConstIterators<MOT>();
+    indexedListConstAndNonConstIterators<MOT>();
+    indexedListIterators<COT>();
+    indexedListConstIterators<COT>();
+    indexedListConstAndNonConstIterators<COT>();
 }

@@ -1,7 +1,7 @@
 #ifndef INDEXED_LIST_H_
 #define INDEXED_LIST_H_
 
-// IndexedList library - open-source, single-header library for C++
+// IndexedList library - open-source, single-header library for C++14
 // It provides an stl-compatibile sequence container with O(log n) positional
 // operations, splicing and merging. It is distributed under MIT License.
 // 
@@ -117,11 +117,11 @@ class RNG64 {
 public:
     std::uint64_t operator()()
     {
-        return (std::uint64_t{ rng() } << 32) | rng();
+        return (std::uint64_t{ rng_() } << 32) | rng_();
     }
 
 private:
-    RNG32 rng;
+    RNG32 rng_;
 };
 
 /**
@@ -839,7 +839,8 @@ using IndexedListConstIterator =
 
 /**
  * @brief Structure that allows for indexed operations in average O(log n) time
- * @tparam T Type of elements to be stored in the container
+ * @tparam T Type of elements to be stored in the container. Does not need to be
+ * copyable nor movable.
  * 
  * @detail
  * Indexed list allows for:
