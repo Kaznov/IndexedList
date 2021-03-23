@@ -170,6 +170,13 @@ void indexedListCapacity() {
     bool e1 = l1.empty();
     bool e2 = l2.empty();
     bool e3 = l3.empty();
+
+    (void)s1;
+    (void)s2;
+    (void)s3;
+    (void)e1;
+    (void)e2;
+    (void)e3;
 }
 
 template <typename T>
@@ -186,6 +193,9 @@ void indexedListIterators() {
 
     // direct iterator getter
     It it4 = l1.iterator_at(0);
+
+    (void)it3;
+    (void)it4;
 
     // incrementation, decrementaion, movement
     ++it1;
@@ -239,6 +249,11 @@ void indexedListConstIterators() {
 
     // direct iterator getter
     Cit it6 = l1.iterator_at(0);
+
+    (void)it3;
+    (void)it4;
+    (void)it5;
+    (void)it6;
 
     // incrementation, decrementaion, movement
     ++it1;
@@ -294,6 +309,11 @@ void indexedListConstAndNonConstIterators() {
     // It it3(cit1);  // <== doesn't compile
     // copy-assignment iterator from const_iterator
     // it2 = cit1;  // <== doesn't compile
+
+    (void)it1;
+    (void)cit1;
+    (void)cit2;
+    (void)cit3;
 }
 
 void indexedListIteratorPack() {
@@ -322,9 +342,10 @@ void indexedListInserts() {
     l2.emplace(cit2);
     l3.emplace(cit3);
 
-    int v1;
+    int v1{};
     MOT v2;
     COT v3;
+    (void)v3;
 
     // insert via copy (const&)
     l1.insert(cit1, v1);
@@ -418,9 +439,10 @@ void indexedListElementAccess() {
     static_assert(is_const_lreference<decltype(l5[0])>::value, "");
     static_assert(is_const_lreference<decltype(l6[0])>::value, "");
 
-    int v1;
+    int v1{};
     MOT v2;
     COT v3;
+    (void)v3;
 
     // getting value via []
     v1 = l1[0];

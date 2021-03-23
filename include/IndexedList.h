@@ -774,21 +774,23 @@ class IndexedListIterator : public boost::stl_interfaces::iterator_interface<
         return *this;
     }
 
-    this_type& operator+=(typename base_type::difference_type distance) {
+    this_type& operator+=(difference_type distance) {
         checkIteratorNotEmpty();
-        INDEXED_LIST_CONTRACT_ASSERT(static_cast<typename Container::size_type>(
-                                         distance + node->getPositionInTree()) <
-                                         node->getTreeHead()->subtree_size,
-                                     "Iterator moves beyond valid range");
+        INDEXED_LIST_CONTRACT_ASSERT(
+            static_cast<typename Container::size_type>(
+                distance +
+                static_cast<difference_type>(node->getPositionInTree())) <
+                node->getTreeHead()->subtree_size,
+            "Iterator moves beyond valid range");
         node = node->getAdvancedByInOrder(distance);
         return *this;
     }
 
-    typename base_type::difference_type operator-(
-        const this_type& other) const {
+    difference_type operator-(const this_type& other) const {
         checkIteratorNotEmpty();
         other.checkIteratorNotEmpty();
-        return node->getPositionInTree() - other.node->getPositionInTree();
+        return static_cast<difference_type>(node->getPositionInTree()) -
+               static_cast<difference_type>(other.node->getPositionInTree());
     }
 
     operator IndexedListIterator<Container, std::add_const_t<ValueType>>() {
