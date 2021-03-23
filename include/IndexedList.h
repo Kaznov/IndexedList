@@ -35,8 +35,9 @@
 
 #include <boost/stl_interfaces/iterator_interface.hpp>
 
-#if defined(INDEXED_LIST_ALWAYS_CHECK_PRECONDITIONS) || !NDEBUG
+#if defined(INDEXED_LIST_ALWAYS_CHECK_PRECONDITIONS) || !defined(NDEBUG)
 #define INDEXED_LIST_CHECK_PRECONDITIONS 1
+
 #include <iostream>
 
 #define INDEXED_LIST_CONTRACT_ASSERT_PREFIX "Violated IndexedList contract: "
@@ -44,24 +45,19 @@
     "If you've got this error, you have found a bug in IndexedList library\n"\
     "Please, report it at: https://github.com/Kaznov/IndexedList \n"
 
-#if defined INDEXED_LIST_SHOW_STACKTRACE_ON_ASSERT
-#include <boost/stacktrace.hpp>
 #define INDEXED_LIST_CUSTOM_ASSERT(expr, msg1, msg2)\
     (!!(expr)) ?                                    \
         ((void)0) :                                 \
         detail::indexedListCustomAssert(            \
-            #expr, msg1 msg2, __FILE__, __LINE__, __func__)
+            #expr, msg1 msg2, __FILE__, __LINE__)
 
 #define INDEXED_LIST_CONTRACT_ASSERT(expr, msg)\
     INDEXED_LIST_CUSTOM_ASSERT(expr, INDEXED_LIST_CONTRACT_ASSERT_PREFIX, msg)
 #define INDEXED_LIST_LIBRARY_ASSERT(expr, msg)\
     INDEXED_LIST_CUSTOM_ASSERT(expr, INDEXED_LIST_LIBRARY_ASSERT_PREFIX, msg)
-#else
-#include <cassert>
-#define INDEXED_LIST_CONTRACT_ASSERT(expr, msg) \
-    assert(((void)(INDEXED_LIST_CONTRACT_ASSERT_PREFIX msg), expr))
-#define INDEXED_LIST_LIBRARY_ASSERT(expr, msg)  \
-    assert(((void)(INDEXED_LIST_LIBRARY_ASSERT_PREFIX msg), expr))
+
+#if defined(INDEXED_LIST_SHOW_STACKTRACE_ON_ASSERT)
+#include <boost/stacktrace.hpp>
 #endif
 
 #else
@@ -76,13 +72,17 @@ namespace indexed_list {
 
 namespace detail {
 
-#if defined INDEXED_LIST_SHOW_STACKTRACE_ON_ASSERT
+#if defined(INDEXED_LIST_CHECK_PRECONDITIONS)
 void indexedListCustomAssert(const char* expr, const char* message,
-                             const char* file, int line, const char* func) {
-    auto stacktrace = boost::stacktrace::stacktrace(/*skip*/1, /*depth*/64);
+                             const char* file, int line) {
     std::cerr << message << "\nAssertion " << expr << " failed in " << file <<
-                 ":" << line << " (" << func << ")\n" << "Stacktrace:\n" <<
-                 stacktrace;
+                 ":" << line << "\n";
+
+#if defined INDEXED_LIST_SHOW_STACKTRACE_ON_ASSERT
+    auto stacktrace = boost::stacktrace::stacktrace(/*skip*/1, /*depth*/64);
+    std::cerr << "Stacktrace:\n" << stacktrace;
+#endif
+
     std::abort();
 }
 #endif
@@ -803,7 +803,9 @@ template<typename Container,
         this_type& operator+=(typename base_type::difference_type distance) {
             checkIteratorNotEmpty();
             INDEXED_LIST_CONTRACT_ASSERT(
-                /*TODO*/true,
+                static_cast<Container::size_type>(
+                    distance + node->getPositionInTree())
+                < node->getTreeHead()->subtree_size,
                 "Iterator moves beyond valid range");
             node = node->getAdvancedByInOrder(distance);
             return *this;
@@ -1622,7 +1624,7 @@ inline typename IndexedList<T>::iterator
 IndexedList<T>::erase(const_iterator pos)
 {
     checkIteratorIsValid(pos);
-    _ASSERT_EXPR(pos != end(), "Cannot erase end iterator");
+    INDEXED_LIST_CONTRACT_ASSERT(pos != end(), "Cannot erase end iterator");
     NodeBase* node = getNotConstNode(pos);
     iterator next_element = ++iterator(node);
     impl_.extractNode(node);
@@ -1695,7 +1697,8 @@ IndexedList<T>::checkIndexIsValidInclusive(size_type pos) const
 
 template<typename T>
 inline void
-IndexedList<T>::checkIteratorsInOrder(const_iterator it1, const_iterator it2) const
+IndexedList<T>::checkIteratorsInOrder(const_iterator it1, const_iterator it2)
+const
 {
     INDEXED_LIST_CONTRACT_ASSERT(
         it1 <= it2,
