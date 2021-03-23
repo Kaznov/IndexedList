@@ -1,0 +1,12 @@
+BasedOnStyle: Chromium
+
+IndentWidth: 4
+AlignConsecutiveAssignments: true
+
+AccessModifierOffset: true
+
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeElse: true
+
+AccessModifierOffset: -2

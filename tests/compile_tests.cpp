@@ -32,55 +32,66 @@ static_assert(
         indexed_list::IndexedList<int>::reverse_iterator>,
     "IndexedList reverse_iterator must model std::bidirectional_iterator ");
 
-static_assert(
-    std::bidirectional_iterator<
-        indexed_list::IndexedList<int>::const_reverse_iterator>,
-    "IndexedList const_reverse_iterator must model "
-    "std::bidirectional_iterator");
+static_assert(std::bidirectional_iterator<
+                  indexed_list::IndexedList<int>::const_reverse_iterator>,
+              "IndexedList const_reverse_iterator must model "
+              "std::bidirectional_iterator");
 
-static_assert(
-    std::ranges::sized_range<indexed_list::IndexedList<int>>,
-    "IndexedList must model std::sized_range");
+static_assert(std::ranges::sized_range<indexed_list::IndexedList<int>>,
+              "IndexedList must model std::sized_range");
 
-static_assert(
-    std::ranges::bidirectional_range<indexed_list::IndexedList<int>>,
-    "IndexedList must model std::bidirectional_range");
+static_assert(std::ranges::bidirectional_range<indexed_list::IndexedList<int>>,
+              "IndexedList must model std::bidirectional_range");
 
-static_assert(
-    std::ranges::output_range<indexed_list::IndexedList<int>, int>,
-    "IndexedList must model std::output_range");
+static_assert(std::ranges::output_range<indexed_list::IndexedList<int>, int>,
+              "IndexedList must model std::output_range");
 
 #endif
 
 struct MoveOnlyType {
     MoveOnlyType() = default;
+
     MoveOnlyType(const MoveOnlyType& other) = delete;
     MoveOnlyType& operator=(const MoveOnlyType& other) = delete;
+
     MoveOnlyType(MoveOnlyType&& other) = default;
     MoveOnlyType& operator=(MoveOnlyType&& other) = default;
+
     ~MoveOnlyType() = default;
 };
 
 struct CreateOnlyType {
-    CreateOnlyType() {}
+    CreateOnlyType() = default;
+
     CreateOnlyType(const CreateOnlyType& other) = delete;
     CreateOnlyType& operator=(const CreateOnlyType& other) = delete;
-    CreateOnlyType(CreateOnlyType&& other) = delete;
+    CreateOnlyType(CreateOnlyType&& other)                 = delete;
     CreateOnlyType& operator=(CreateOnlyType&& other) = delete;
+
     ~CreateOnlyType() = default;
 };
 
-template<class T> struct is_const_lreference : std::false_type {};
-template<class T> struct is_const_lreference<T&&> : std::false_type {};
-template<class T> struct is_const_lreference<T&> : std::false_type {};
-template<class T> struct is_const_lreference<const T&&> : std::false_type {};
-template<class T> struct is_const_lreference<const T&> : std::true_type {};
+template <class T>
+struct is_const_lreference : std::false_type {};
+template <class T>
+struct is_const_lreference<T&&> : std::false_type {};
+template <class T>
+struct is_const_lreference<T&> : std::false_type {};
+template <class T>
+struct is_const_lreference<const T&&> : std::false_type {};
+template <class T>
+struct is_const_lreference<const T&> : std::true_type {};
 
-template<class T> struct is_mutable_lreference : std::false_type {};
-template<class T> struct is_mutable_lreference<T&&> : std::false_type {};
-template<class T> struct is_mutable_lreference<T&> : std::true_type {};
-template<class T> struct is_mutable_lreference<const T&&> : std::false_type {};
-template<class T> struct is_mutable_lreference<const T&> : std::false_type {};
+template <class T>
+struct is_mutable_lreference : std::false_type {};
+template <class T>
+struct is_mutable_lreference<T&&> : std::false_type {};
+template <class T>
+struct is_mutable_lreference<T&> : std::true_type {};
+template <class T>
+struct is_mutable_lreference<const T&&> : std::false_type {};
+template <class T>
+struct is_mutable_lreference<const T&> : std::false_type {};
 
 using MOT = MoveOnlyType;
 using COT = CreateOnlyType;
@@ -99,7 +110,7 @@ void indexedListConstructors() {
     // IL<MOT> l5(l2);  // <== doesn't compile
     // IL<COT> l6(l3);  // <== doesn't compile
 
-    //move constructor
+    // move constructor
     IL<int> l7(std::move(l1));
     IL<MOT> l8(std::move(l2));
     IL<COT> l9(std::move(l3));  // note, that type does not need to be movable
@@ -111,9 +122,9 @@ void indexedListConstructors() {
 
     // range constructor, move iterators
     IL<int> l12(std::make_move_iterator(l1.begin()),
-        std::make_move_iterator(l1.end()));
+                std::make_move_iterator(l1.end()));
     IL<MOT> l13(std::make_move_iterator(l2.begin()),
-        std::make_move_iterator(l2.end()));
+                std::make_move_iterator(l2.end()));
     /*IL<COT> l14(std::make_move_iterator(l3.begin()),  // <== doesn't compile
          std::make_move_iterator(l3.end()));*/
 }
@@ -140,9 +151,9 @@ void indexedListAssignment() {
 
     // range assignment, move iterators
     l1a.assign(std::make_move_iterator(l1b.begin()),
-        std::make_move_iterator(l1b.end()));
+               std::make_move_iterator(l1b.end()));
     l2a.assign(std::make_move_iterator(l2b.begin()),
-        std::make_move_iterator(l2b.end()));
+               std::make_move_iterator(l2b.end()));
     /*l3a.assign(std::make_move_iterator(l3b.begin()),  // <== doesn't compile
         std::make_move_iterator(l3b.end()));*/
 }
@@ -253,9 +264,8 @@ void indexedListConstIterators() {
     (void)(it1 > it2);
     (void)(it1 >= it2);
 
-    static_assert(
-        is_const_lreference<decltype(*it1)>::value,
-        "dereferencing const iterator must return const reference");
+    static_assert(is_const_lreference<decltype(*it1)>::value,
+                  "dereferencing const iterator must return const reference");
 
     for (auto&& el : l1) {
         static_assert(
@@ -266,7 +276,7 @@ void indexedListConstIterators() {
 
 template <typename T>
 void indexedListConstAndNonConstIterators() {
-    using It = typename IL<T>::iterator;
+    using It  = typename IL<T>::iterator;
     using Cit = typename IL<T>::const_iterator;
 
     It it1;
