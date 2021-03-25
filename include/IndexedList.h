@@ -233,12 +233,12 @@ class SequencedTreap {
          * branch. Otherwise, return `nullptr`.
          */
         const Node* getLeftBranchAncestor() const {
-            const Node* child  = this;
-            const Node* node = this->parent;
+            const Node* child = this;
+            const Node* node  = this->parent;
 
             while (node != nullptr && node->left != child) {
-                child  = node;
-                node = node->parent;
+                child = node;
+                node  = node->parent;
             }
 
             return node;
@@ -251,12 +251,12 @@ class SequencedTreap {
          * branch. Otherwise, return `nullptr`.
          */
         const Node* getRightBranchAncestor() const {
-            const Node* child  = this;
-            const Node* node = this->parent;
+            const Node* child = this;
+            const Node* node  = this->parent;
 
             while (node != nullptr && node->right != child) {
-                child  = node;
-                node = node->parent;
+                child = node;
+                node  = node->parent;
             }
 
             return node;
@@ -789,19 +789,21 @@ class IndexedListIterator : public boost::stl_interfaces::iterator_interface<
 
     typename base_type::reference operator*() const {
         checkIteratorNotEmpty();
-        INDEXED_LIST_CONTRACT_ASSERT(node->parent != nullptr,
+        INDEXED_LIST_CONTRACT_ASSERT(node_->parent != nullptr,
                                      "Cannot dereference end iterator");
 
-        return Container::getFullNode(node).value;
+        return Container::getFullNode(node_).value;
     }
 
-    bool operator==(const this_type& other) const { return node == other.node; }
+    bool operator==(const this_type& other) const {
+        return node_ == other.node_;
+    }
 
     this_type& operator++() {
         checkIteratorNotEmpty();
-        node = node->getNextNodeInOrder();
+        node_ = node_->getNextNodeInOrder();
 
-        INDEXED_LIST_CONTRACT_ASSERT(node != nullptr,
+        INDEXED_LIST_CONTRACT_ASSERT(node_ != nullptr,
                                      "Iterator moves beyond valid range");
 
         return *this;
@@ -809,9 +811,9 @@ class IndexedListIterator : public boost::stl_interfaces::iterator_interface<
 
     this_type& operator--() {
         checkIteratorNotEmpty();
-        node = node->getPrevNodeInOrder();
+        node_ = node_->getPrevNodeInOrder();
 
-        INDEXED_LIST_CONTRACT_ASSERT(node != nullptr,
+        INDEXED_LIST_CONTRACT_ASSERT(node_ != nullptr,
                                      "Iterator moves beyond valid range");
 
         return *this;
@@ -822,22 +824,22 @@ class IndexedListIterator : public boost::stl_interfaces::iterator_interface<
         INDEXED_LIST_CONTRACT_ASSERT(
             static_cast<typename Container::size_type>(
                 distance +
-                static_cast<difference_type>(node->getPositionInTree())) <
-                node->getTreeHead()->subtree_size,
+                static_cast<difference_type>(node_->getPositionInTree())) <
+                node_->getTreeHead()->subtree_size,
             "Iterator moves beyond valid range");
-        node = node->getAdvancedByInOrder(distance);
+        node_ = node_->getAdvancedByInOrder(distance);
         return *this;
     }
 
     difference_type operator-(const this_type& other) const {
         checkIteratorNotEmpty();
         other.checkIteratorNotEmpty();
-        return static_cast<difference_type>(node->getPositionInTree()) -
-               static_cast<difference_type>(other.node->getPositionInTree());
+        return static_cast<difference_type>(node_->getPositionInTree()) -
+               static_cast<difference_type>(other.node_->getPositionInTree());
     }
 
     operator IndexedListIterator<Container, std::add_const_t<ValueType>>() {
-        return {node};
+        return {node_};
     }
 
     IndexedListIterator() = default;
@@ -848,15 +850,15 @@ class IndexedListIterator : public boost::stl_interfaces::iterator_interface<
                            std::add_const_t<typename Container::NodeBase>,
                            typename Container::NodeBase>;
 
-    IndexedListIterator(NodeBase* node) : node(node) {}
+    IndexedListIterator(NodeBase* node) : node_(node) {}
 
   private:
     void checkIteratorNotEmpty() const {
         INDEXED_LIST_CONTRACT_ASSERT(
-            node != nullptr, "Cannot operate on default-constructed iterator");
+            node_ != nullptr, "Cannot operate on default-constructed iterator");
     }
 
-    NodeBase* node = nullptr;
+    NodeBase* node_ = nullptr;
 
     friend Container;
     friend IndexedListIterator<Container, std::remove_const_t<ValueType>>;
@@ -1620,7 +1622,7 @@ IndexedList<T>::insert(const_iterator pos, const value_type& value) {
     checkIteratorIsValid(pos);
 
     NodeBase* node     = getNewNode(value);
-    NodeBase* pos_node = getNotConstNode(pos.node);
+    NodeBase* pos_node = getNotConstNode(pos.node_);
     impl_.insertNodeBefore(node, pos_node);
     return iterator(node);
 }
@@ -1631,7 +1633,7 @@ IndexedList<T>::insert(const_iterator pos, value_type&& value) {
     checkIteratorIsValid(pos);
 
     NodeBase* node     = getNewNode(std::move(value));
-    NodeBase* pos_node = getNotConstNode(pos.node);
+    NodeBase* pos_node = getNotConstNode(pos.node_);
     impl_.insertNodeBefore(node, pos_node);
     return iterator(node);
 }
@@ -1656,7 +1658,7 @@ inline typename IndexedList<T>::iterator  //
 IndexedList<T>::emplace(const_iterator pos, Args&&... args) {
     checkIteratorIsValid(pos);
     NodeBase* node     = getNewNode(std::forward<Args>(args)...);
-    NodeBase* pos_node = getNotConstNode(pos.node);
+    NodeBase* pos_node = getNotConstNode(pos.node_);
     impl_.insertNodeBefore(node, pos_node);
     return iterator(node);
 }
@@ -1821,7 +1823,7 @@ IndexedList<T>::checkIteratorsInOrder(const_iterator it1,
 template <typename T>
 inline void  //
 IndexedList<T>::checkIteratorIsValid(const_iterator it) const {
-    INDEXED_LIST_CONTRACT_ASSERT(it.node->getTreeHead() == impl_.getHeadNode(),
+    INDEXED_LIST_CONTRACT_ASSERT(it.node_->getTreeHead() == impl_.getHeadNode(),
                                  "Iterator does not belong to this container");
     (void)it;
 }
@@ -1908,7 +1910,7 @@ IndexedList<T>::getNotConstNode(const_iterator it) {
     // 1. pos is an iterator to this container
     // 2. we are inside a non-const method, so this container isn't const
     // 3. because of that, the pointed-to element isn't const
-    return const_cast<NodeBase*>(it.node);
+    return const_cast<NodeBase*>(it.node_);
 }
 
 }  // namespace indexed_list
