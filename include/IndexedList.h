@@ -234,14 +234,14 @@ class SequencedTreap {
          */
         const Node* getLeftBranchAncestor() const {
             const Node* child  = this;
-            const Node* parent = this->parent;
+            const Node* node = this->parent;
 
-            while (parent != nullptr && parent->left != child) {
-                child  = parent;
-                parent = parent->parent;
+            while (node != nullptr && node->left != child) {
+                child  = node;
+                node = node->parent;
             }
 
-            return parent;
+            return node;
         }
         NON_CONST_NODE_BASE_METHOD(getLeftBranchAncestor);
 
@@ -252,14 +252,14 @@ class SequencedTreap {
          */
         const Node* getRightBranchAncestor() const {
             const Node* child  = this;
-            const Node* parent = this->parent;
+            const Node* node = this->parent;
 
-            while (parent != nullptr && parent->right != child) {
-                child  = parent;
-                parent = parent->parent;
+            while (node != nullptr && node->right != child) {
+                child  = node;
+                node = node->parent;
             }
 
-            return parent;
+            return node;
         }
         NON_CONST_NODE_BASE_METHOD(getRightBranchAncestor);
 
