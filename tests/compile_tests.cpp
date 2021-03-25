@@ -462,3 +462,44 @@ void indexedListElementAccess() {
     l2[0] = std::move(v2);
     // l3[0] = std::move(v3);  // <== doesn't compile
 }
+
+void indexedListBulkOperations() {
+    IL<int> l1;
+    IL<MOT> l2;
+    IL<COT> l3;
+
+    // split by iterator
+    l1.split(l1.cend());
+    l2.split(l2.cend());
+    l3.split(l3.cend());
+
+    // split by iterator range
+    l1.split(l1.cend(), l1.cend());
+    l2.split(l2.cend(), l2.cend());
+    l3.split(l3.cend(), l3.cend());
+
+    // split by position
+    l1.split_at(0);
+    l2.split_at(0);
+    l3.split_at(0);
+
+    // split by position range
+    l1.split_at(0, 0);
+    l2.split_at(0, 0);
+    l3.split_at(0, 0);
+
+    // concat
+    l1.concat(IL<int>{});
+    l2.concat(IL<MOT>{});
+    l3.concat(IL<COT>{});
+
+    // merge at iterator
+    l1.merge(IL<int>{}, l1.end());
+    l2.merge(IL<MOT>{}, l2.end());
+    l3.merge(IL<COT>{}, l3.end());
+
+    // merge at position
+    l1.merge_at(IL<int>{}, 0);
+    l2.merge_at(IL<MOT>{}, 0);
+    l3.merge_at(IL<COT>{}, 0);
+}

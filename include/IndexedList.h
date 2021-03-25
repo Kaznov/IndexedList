@@ -35,8 +35,9 @@
 
 #include <boost/stl_interfaces/iterator_interface.hpp>
 
+#undef INDEXED_LIST_CHECK_PRECONDITIONS
 #if defined(INDEXED_LIST_ALWAYS_CHECK_PRECONDITIONS) || !defined(NDEBUG)
-#define INDEXED_LIST_CHECK_PRECONDITIONS 1
+#define INDEXED_LIST_CHECK_PRECONDITIONS
 
 #include <iostream>
 
@@ -61,7 +62,6 @@
 
 #else
 
-#define INDEXED_LIST_CHECK_PRECONDITIONS 0
 #define INDEXED_LIST_CONTRACT_ASSERT(expr, msg) ((void)0)
 #define INDEXED_LIST_LIBRARY_ASSERT(expr, msg) ((void)0)
 
@@ -489,6 +489,14 @@ class SequencedTreap {
         return node;
     }
 
+    Node* extractRange(Node* first, Node* last) {
+        Node* middle_and_right = split(first);
+        SequencedTreap tmp;
+        tmp.concat(middle_and_right);
+        concat(tmp.split(last));
+        return tmp.extractAll();
+    }
+
     template <typename NodeEraser>
     void clear(NodeEraser& eraser) {
         clearSubtree(head_.left, eraser);
@@ -503,6 +511,13 @@ class SequencedTreap {
         clearSubtree(node->left, eraser);
         clearSubtree(node->right, eraser);
         eraser(node);
+    }
+
+    template <typename NodeEraser>
+    void clearRange(Node* first, Node* last, NodeEraser& eraser) {
+        SequencedTreap tmp;
+        tmp.concat(extractRange(first, last));
+        tmp.clear(eraser);
     }
 
     template <typename NodeCloner>
@@ -526,6 +541,33 @@ class SequencedTreap {
     void takeOwnership(SequencedTreap&& other) {
         INDEXED_LIST_LIBRARY_ASSERT(isEmpty(), "Taking ownership would leal");
         assignLeftChild(&head_, other.extractAll());
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    //                       Splitting and merging                            //
+    ////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @brief Splits the treap in two
+     * @param position First node of the second treap
+     * @return Node being head of the right tree after split
+     */
+    Node* split(Node* position) {
+        Node splitter;
+        splitter.weight       = 0;
+        splitter.subtree_size = 1;
+        insertNodeBefore(&splitter, position);
+        assignLeftChild(&head_, splitter.left);
+        updateNodeSize(&head_);
+
+        Node* right   = splitter.right;
+        right->parent = nullptr;
+        return right;
+    }
+
+    void concat(Node* subtree) {
+        assignLeftChild(&head_, mergeSubtrees(head_.left, subtree));
+        updateNodeSize(&head_);
     }
 
   private:
@@ -704,6 +746,7 @@ class SequencedTreap {
         INDEXED_LIST_LIBRARY_ASSERT(
             node->right == nullptr || node->weight < node->right->weight,
             "Heap property");
+        (void)node;
     }
     ////////////////////////////////////////////////////////////////////////////
     //                      Private data members                              //
@@ -1193,6 +1236,8 @@ class IndexedList {
      * @brief Removes specified element from the container.
      * @param pos Iterator to the element to remove
      * @return Iterator following the removed element
+     * @detail
+     * @b Complexity: O(log((*this).size()))
      */
     iterator erase(const_iterator pos);
     /**
@@ -1201,32 +1246,100 @@ class IndexedList {
      * @param first Iterator to the first element to remove
      * @param last Iterator following the last element to remove
      * @return Iterator following the last removed element
+     * @detail
+     * @b Complexity: O(log((*this).size()) + std::distance(first, last))
      */
     iterator erase(const_iterator first, const_iterator last);
     /**
      * @brief Removes element at specified position from the container.
      * @param pos Position of the element to remove
      * @return Iterator following the removed element
+     * @detail
+     * @b Complexity: O(log((*this).size()))
      */
     iterator erase_at(size_type pos);
     /**
      * @brief Removes a range of elements from the container.
      * Removes the elements at positions in range [`pos_first`, `pos_last`).
      * @param first Position of the first element to remove
-     * @param last Position 1 after the position of the last element to remove
+     * @param last Position 1 past the position of the last element to remove
      * @return Iterator following the last removed element
+     * @detail
+     * @b Complexity: O(log((*this).size()) + (pos_last - pos_first))
      */
     iterator erase_at(size_type pos_first, size_type pos_last);
 
     ////////////////////////////////////////////////////////////////////////////
     //                          Bulk operations                               //
     ////////////////////////////////////////////////////////////////////////////
-    // IndexedList split(const_iterator first);
-    // IndexedList split(const_iterator first, const_iterator last);
-    // IndexedList split_at(size_type pos_first, size_type pos_last = -1);
+    /**
+     * @brief Splits container into two.
+     * Elements from the `first` onward will be moved to a new container.
+     * @param first Iterator to the first element in the new container
+     * @return A new container, with elements from range [`first`, `end()`)
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    IndexedList split(const_iterator first);
+    /**
+     * @brief Splits container into two. Elements from range described by
+     * input parameters will be moved to a new container.
+     * @param Iterator to the first element in the new container
+     * @param Iterator past-the-last element in the new container
+     * @return A new container, with elements from range [`first`, `last`)
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    IndexedList split(const_iterator first, const_iterator last);
+    /**
+     * @brief Splits container into two. Elements from position `pos_first`
+     * onward will be moved to a new container.
+     * @param pos_first Position of the first element in the new container
+     * @return A new container, with elements from positions
+     * [`pos_first`, `size()`)
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    IndexedList split_at(size_type pos_first);
+    /**
+     * @brief Splits container into two. Elements from positions in range
+     * described by input parameters will be moved to to a new container.
+     * @param pos_first Position of the first element in the new container
+     * @param pos_last Position 1 past the position of the last element in the
+     * new container
+     * @return A new container, with elements from position
+     * [`pos_first`, `pos_last`)
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    IndexedList split_at(size_type pos_first, size_type pos_last);
 
-    // void merge(IndexedList&& other, const_iterator pos);
-    // void merge_at(IndexedList&& other, size_type pos);
+    /**
+     * @brief Places content of the `other` at the end of `*this`. Equivalent to
+     * `merge(other, end())`.
+     * @param other Other container, its content will be moved to this container
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    void concat(IndexedList&& other);
+    /**
+     * @brief Merges in the content of `other` at given position.
+     * @param other Other container, its content will be moved to this container
+     * @param pos Iterator, before which the elements will be inserted, might be
+     * an `end()` iterator.
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    void merge(IndexedList&& other, const_iterator pos);
+    /**
+     * @brief Merges in the content of `other` at given position.
+     * @param other Other container, its content will be moved to this container
+     * @param pos Position, at which the elements will be inserted, might be
+     * `size()`.
+     * @detail
+     * @b Complexity: O(log((*this).size()))
+     */
+    void merge_at(IndexedList&& other, size_type pos);
 
 #if defined(INDEXED_LIST_TESTING)
     void checkTreeIsValid();
@@ -1573,8 +1686,12 @@ IndexedList<T>::erase(const_iterator first, const_iterator last) {
     checkIteratorIsValid(first);
     checkIteratorIsValid(last);
     checkIteratorsInOrder(first, last);
-    return erase_at(first.node->getPositionInTree(),
-                    last.node->getPositionInTree());
+
+    auto eraser     = getNodeEraser();
+    auto first_node = getNotConstNode(first);
+    auto last_node  = getNotConstNode(last);
+    impl_.clearRange(first_node, last_node, eraser);
+    return {last_node};
 }
 
 template <typename T>
@@ -1591,9 +1708,72 @@ IndexedList<T>::erase_at(size_type pos_first, size_type pos_last) {
     checkIndexIsValidInclusive(pos_last);
     checkIndexesInOrder(pos_first, pos_last);
 
-    auto past_it = iterator_at(pos_last);
-    // TODO
-    return past_it;
+    return erase(iterator_at(pos_first), iterator_at(pos_last));
+}
+
+template <typename T>
+inline IndexedList<T>  //
+IndexedList<T>::split(const_iterator first) {
+    checkIteratorIsValid(first);
+    if (first == end())
+        return {};
+    NodeBase* pos_node = getNotConstNode(first);
+    IndexedList right_part;
+    right_part.impl_.concat(impl_.split(pos_node));
+    return right_part;
+}
+
+template <typename T>
+inline IndexedList<T>  //
+IndexedList<T>::split(const_iterator first, const_iterator last) {
+    checkIteratorIsValid(first);
+    checkIteratorIsValid(last);
+    checkIteratorsInOrder(first, last);
+    IndexedList right_part = split(first);
+    if (last == end())
+        return right_part;
+    NodeBase* pos_node = getNotConstNode(last);
+    impl_.concat(right_part.impl_.split(pos_node));
+    return right_part;
+}
+
+template <typename T>
+inline IndexedList<T>  //
+IndexedList<T>::split_at(size_type pos_first) {
+    checkIndexIsValidInclusive(pos_first);
+    return split(iterator_at(pos_first));
+}
+
+template <typename T>
+inline IndexedList<T>  //
+IndexedList<T>::split_at(size_type pos_first, size_type pos_last) {
+    checkIndexIsValidInclusive(pos_first);
+    checkIndexIsValidInclusive(pos_last);
+    checkIndexesInOrder(pos_first, pos_last);
+    return split(iterator_at(pos_first));
+}
+
+template <typename T>
+inline void  //
+IndexedList<T>::concat(IndexedList&& other) {
+    impl_.concat(other.impl_.extractAll());
+}
+
+template <typename T>
+inline void  //
+IndexedList<T>::merge(IndexedList&& other, const_iterator pos) {
+    checkIteratorIsValid(pos);
+    NodeBase* pos_node   = getNotConstNode(pos);
+    NodeBase* right_part = impl_.split(pos_node);
+    impl_.concat(other.impl_.extractAll());
+    impl_.concat(right_part);
+}
+
+template <typename T>
+inline void  //
+IndexedList<T>::merge_at(IndexedList&& other, size_type pos) {
+    checkIndexIsValidInclusive(pos);
+    return merge(std::move(other), iterator_at(pos));
 }
 
 #if defined(INDEXED_LIST_TESTING)
@@ -1609,18 +1789,22 @@ inline void  //
 IndexedList<T>::checkIndexesInOrder(size_type pos1, size_type pos2) const {
     INDEXED_LIST_CONTRACT_ASSERT(
         pos1 <= pos2, "Second index of the pair is lower than the first");
+    (void)pos1;
+    (void)pos2;
 }
 
 template <typename T>
 inline void  //
 IndexedList<T>::checkIndexIsValid(size_type pos) const {
     INDEXED_LIST_CONTRACT_ASSERT(pos < size(), "Index outside of valid range");
+    (void)pos;
 }
 
 template <typename T>
 inline void  //
 IndexedList<T>::checkIndexIsValidInclusive(size_type pos) const {
     INDEXED_LIST_CONTRACT_ASSERT(pos <= size(), "Index outside of valid range");
+    (void)pos;
 }
 
 template <typename T>
@@ -1630,6 +1814,8 @@ IndexedList<T>::checkIteratorsInOrder(const_iterator it1,
     INDEXED_LIST_CONTRACT_ASSERT(
         it1 <= it2,
         "Second iterator of the pair is earlier in container than the first");
+    (void)it1;
+    (void)it2;
 }
 
 template <typename T>
@@ -1637,6 +1823,7 @@ inline void  //
 IndexedList<T>::checkIteratorIsValid(const_iterator it) const {
     INDEXED_LIST_CONTRACT_ASSERT(it.node->getTreeHead() == impl_.getHeadNode(),
                                  "Iterator does not belong to this container");
+    (void)it;
 }
 
 template <typename T>
@@ -1644,9 +1831,9 @@ template <typename InputIt>
 inline void  //
 IndexedList<T>::checkIteratorNotFromContainer(InputIt first,
                                               InputIt last) const {
-    auto getAddress = [](auto&& v) { return &v; };
 // I don't even hope that the optimizer will remove it by itself
-#if INDEXED_LIST_CHECK_PRECONDITIONS
+#if defined(INDEXED_LIST_CHECK_PRECONDITIONS)
+    auto getAddress = [](auto&& v) { return &v; };
     if (first == last)
         return;
     for (const auto& el : *this) {
@@ -1654,6 +1841,8 @@ IndexedList<T>::checkIteratorNotFromContainer(InputIt first,
                                      "Invalid iterator range");
     }
 #endif
+    (void)first;
+    (void)last;
 }
 
 // static
@@ -1675,7 +1864,8 @@ inline void  //
 IndexedList<T>::clearNode(NodeBase* node) {
     auto&& aloc     = getAllocator();
     Node* full_node = &getFullNode(node);
-    full_node->value.~value_type();
+    std::allocator_traits<real_allocator_type>::destroy(aloc,
+                                                        &full_node->value);
     aloc.deallocate(full_node, 1);
 }
 
