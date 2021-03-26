@@ -44,11 +44,11 @@
 #define INDEXED_LIST_CONTRACT_ASSERT_PREFIX "Violated IndexedList contract: "
 #define INDEXED_LIST_LIBRARY_ASSERT_PREFIX                                    \
     "If you've got this error, you have found a bug in IndexedList library\n" \
-    "Please, report it at: https://github.com/Kaznov/IndexedList \n"
+    "Please, report it at: https://github.com/Kaznov/IndexedList"
 
-#define INDEXED_LIST_CUSTOM_ASSERT(expr, msg1, msg2)                         \
-    (!!(expr)) ? ((void)0)                                                   \
-               : detail::indexedListCustomAssert(#expr, msg1 msg2, __FILE__, \
+#define INDEXED_LIST_CUSTOM_ASSERT(expr, msg1, msg2)                          \
+    (!!(expr)) ? ((void)0)                                                    \
+               : detail::indexedListCustomAssert(#expr, msg1, msg2, __FILE__, \
                                                  __LINE__)
 
 #define INDEXED_LIST_CONTRACT_ASSERT(expr, msg) \
@@ -73,10 +73,12 @@ namespace detail {
 
 #if defined(INDEXED_LIST_CHECK_PRECONDITIONS)
 void indexedListCustomAssert(const char* expr,
-                             const char* message,
+                             const char* message1,
+                             const char* message2,
                              const char* file,
                              int line) {
-    std::cerr << message << "\nAssertion " << expr << " failed in " << file
+    std::cerr << message1 << "\n"
+              << message2 << "\nAssertion " << expr << " failed in " << file
               << ":" << line << "\n";
 
 #if defined INDEXED_LIST_SHOW_STACKTRACE_ON_ASSERT
@@ -169,6 +171,7 @@ class SequencedTreap {
         ////////////////////////////////////////////////////////////////////////
         //                        Node properties                             //
         ////////////////////////////////////////////////////////////////////////
+
         size_type getLeftSubtreeSize() const {
             if (left == nullptr)
                 return 0;
@@ -194,6 +197,7 @@ class SequencedTreap {
         ////////////////////////////////////////////////////////////////////////
         //                     Binary tree traversal                          //
         ////////////////////////////////////////////////////////////////////////
+
 #define NON_CONST_NODE_BASE_METHOD(method) \
     Node* method() { return const_cast<Node*>(asConst()->method()); }
 
@@ -396,6 +400,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                   Object creation, assigning value                     //
     ////////////////////////////////////////////////////////////////////////////
+
     SequencedTreap() { initHead(); }
 
     SequencedTreap(const SequencedTreap&) = delete;
@@ -417,6 +422,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                             Capacity                                   //
     ////////////////////////////////////////////////////////////////////////////
+
     size_type size() const { return head_.subtree_size - 1; }
 
     bool isEmpty() const { return head_.left == nullptr; }
@@ -424,6 +430,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                          Nodes getters                                 //
     ////////////////////////////////////////////////////////////////////////////
+
 #define NON_CONST_NODE_BASE_TREAP_METHOD(method) \
     Node* method() { return const_cast<Node*>(asConst()->method()); }
 
@@ -446,6 +453,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                     Node-based modifiers                               //
     ////////////////////////////////////////////////////////////////////////////
+
     void insertNodeBefore(Node* node, Node* position) {
         if (position->left == nullptr) {
             assignSureLeftChild(position, node);
@@ -523,23 +531,38 @@ class SequencedTreap {
     template <typename NodeCloner>
     void clone(const SequencedTreap& other, NodeCloner& cloner) {
         INDEXED_LIST_LIBRARY_ASSERT(isEmpty(), "Clone would leak");
-        assignLeftChild(&head_, cloneSubtree(other.head_.left, cloner));
-        updateNodeSize(&head_);
+        try {
+            cloneSubtree(&other.head_, &head_, cloner);
+        } catch (...) {
+            recoveryFixSizeInEntireTree();
+            throw;
+        }
     }
 
+    /**
+     * @brief Subroutine for cloning a part of the tree
+     * @detail Implemented with exception safety in mind. It takes a `target`
+     * node, that is already allocated, constructed and put into the tree. This
+     * way, even if cloning throws, we don't lose any pointers, don't leak any
+     * objects, and only some size fix is needed.
+     */
     template <typename NodeCloner>
-    Node* cloneSubtree(Node* node, NodeCloner& cloner) {
-        if (node == nullptr)
-            return nullptr;
-
-        Node* cloned = cloner(node);
-        assignLeftChild(cloned, cloneSubtree(node->left, cloner));
-        assignRightChild(cloned, cloneSubtree(node->right, cloner));
-        return cloned;
+    void cloneSubtree(const Node* source, Node* target, NodeCloner& cloner) {
+        target->left  = nullptr;
+        target->right = nullptr;
+        if (source->left != nullptr) {
+            assignSureLeftChild(target, cloner(source->left));
+            cloneSubtree(source->left, target->left, cloner);
+        }
+        if (source->right != nullptr) {
+            assignSureRightChild(target, cloner(source->right));
+            cloneSubtree(source->right, target->right, cloner);
+        }
+        target->subtree_size = source->subtree_size;
     }
 
     void takeOwnership(SequencedTreap&& other) {
-        INDEXED_LIST_LIBRARY_ASSERT(isEmpty(), "Taking ownership would leal");
+        INDEXED_LIST_LIBRARY_ASSERT(isEmpty(), "Taking ownership would leak");
         assignLeftChild(&head_, other.extractAll());
     }
 
@@ -574,6 +597,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                    Simple operations wrappers                          //
     ////////////////////////////////////////////////////////////////////////////
+
     const SequencedTreap* asConst() const { return this; }
 
     static void assignLeftChild(Node* parent, Node* left) {
@@ -620,6 +644,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                      Fixing treap structure                            //
     ////////////////////////////////////////////////////////////////////////////
+
     void fixSizeUpToRoot(Node* node) {
         while (node->parent != nullptr) {
             node = node->parent;
@@ -714,6 +739,22 @@ class SequencedTreap {
         return root;
     }
 
+    /**
+     * @brief A recovery procedure. After cloning fails, all subtree sizes
+     * are invalid and need to be fixed.
+     */
+    void recoveryFixSizeInEntireTree() { recoveryFixSizeInSubtree(&head_); }
+
+    size_type recoveryFixSizeInSubtree(Node* node) {
+        if (node == nullptr)
+            return 0;
+        size_type subtree_size = 1;
+        subtree_size += recoveryFixSizeInSubtree(node->left);
+        subtree_size += recoveryFixSizeInSubtree(node->right);
+        node->subtree_size = subtree_size;
+        return subtree_size;
+    }
+
     void checkTreeIsValid() { checkSubtreeIsValid(&head_); }
 
     void checkSubtreeIsValid(Node* node) {
@@ -751,6 +792,7 @@ class SequencedTreap {
     ////////////////////////////////////////////////////////////////////////////
     //                      Private data members                              //
     ////////////////////////////////////////////////////////////////////////////
+
     Node head_; /** Head of the tree, sentinel, always last in the order.
                 Its weight is always 0, it has no element, parent and right
                 child are always `nullptr`s. */
@@ -899,7 +941,7 @@ using IndexedListConstIterator =
  * The `end()` iterator is never invalidated, but doesn't move between
  * containers.
  *
- * This container is implemented as heap (randomized binary search tree).
+ * This container is implemented as a treap (randomized binary search tree).
  * The height of the tree is O(log n) 'with high probability', but in case a
  * malicious party gets access to RNG state / nodes weight, it may perform an
  * attack against the RNG and increase the tree height up to O(n). In this case,
@@ -907,10 +949,10 @@ using IndexedListConstIterator =
  *
  * indexed_list is NOT allocator-aware. Internally it uses std::allocator.
  *
- * indexed_list does NOT give any exception quarantees. If an allocation,
- * object constructor or assignment throws, the object might enter invalid state
- * and program has an Undefined Behaviour. You are on your own. It is planned
- * to add exceptions guarantees in the future.
+ * indexed_list (tries to) provide some exception guarantees.
+ * Inserting a single new element in any way provides strong exception safety.
+ * Copy constructor, copy assignment and `assign` method provide basic
+ * exception safety.
  *
  * indexed_list does NOT meet the requirements of SequenceContainer, even though
  * logically it is a sequence container. I don't agree with some API decisions,
@@ -1428,6 +1470,7 @@ class indexed_list {
     ////////////////////////////////////////////////////////////////////////////
     //                      Private data members                              //
     ////////////////////////////////////////////////////////////////////////////
+
     Impl impl_;
     RNG rng_;
 };
@@ -1878,10 +1921,8 @@ indexed_list<T>::clearNode(NodeBase* node) {
 template <typename T>
 inline typename indexed_list<T>::NodeBase*  //
 indexed_list<T>::cloneNode(const NodeBase* node) {
-    auto&& aloc      = getAllocator();
-    Node* new_node   = aloc.allocate(1);
-    new_node->weight = node->weight;
-    new_node->value  = getFullNode(node).value;
+    NodeBase* new_node = getNewNode(getFullNode(node).value);
+    new_node->weight   = node->weight;
     return new_node;
 }
 
@@ -1896,9 +1937,17 @@ template <typename... Args>
 inline typename indexed_list<T>::NodeBase*  //
 indexed_list<T>::getNewNode(Args&&... args) {
     auto&& aloc = getAllocator();
-    Node* node  = aloc.allocate(1);
-    std::allocator_traits<real_allocator_type>::construct(
-        aloc, node, std::forward<Args>(args)...);
+    Node* node  = nullptr;
+    try {
+        node = aloc.allocate(1);
+        std::allocator_traits<real_allocator_type>::construct(
+            aloc, node, std::forward<Args>(args)...);
+    } catch (...) {
+        if (node != nullptr) {
+            aloc.deallocate(node, 1);
+        }
+        throw;
+    }
     node->subtree_size = 1;
     do {
         node->weight = rng_();
