@@ -960,7 +960,7 @@ class indexed_list {
     /**
      * @brief Creates an empty container
      */
-    indexed_list();
+    indexed_list() noexcept;
     /**
      * @brief Constructs container from range [`first`, `last`)
      * @tparam InputIt Iterator type, must model LegacyInputIterator
@@ -987,7 +987,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(1)
      */
-    indexed_list(indexed_list&& other);
+    indexed_list(indexed_list&& other) noexcept;
     /**
      * @brief Replaces content of `*this` with copy of content of the `other`.
      * All the elements currently stored in `*this` are discarded.
@@ -1004,7 +1004,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O((*this).size() + 1)
      */
-    indexed_list& operator=(indexed_list&& other);
+    indexed_list& operator=(indexed_list&& other) noexcept;
     ~indexed_list();
 
     /**
@@ -1046,37 +1046,37 @@ class indexed_list {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    iterator begin();
+    iterator begin() noexcept;
     /**
      * @brief Returns a const iterator to the first element.
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    const_iterator begin() const;
+    const_iterator begin() const noexcept;
     /**
      * @brief Returns a const iterator to the first element.
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    const_iterator cbegin() const;
+    const_iterator cbegin() const noexcept;
     /**
      * @brief Returns a past-the-end iterator. It is not dereferenceable.
      * @detail
      * @b Complexity: O(1)
      */
-    iterator end();
+    iterator end() noexcept;
     /**
      * @brief Returns a past-the-end const iterator. It is not dereferenceable.
      * @detail
      * @b Complexity: O(1)
      */
-    const_iterator end() const;
+    const_iterator end() const noexcept;
     /**
      * @brief Returns a past-the-end const iterator. It is not dereferenceable.
      * @detail
      * @b Complexity: O(1)
      */
-    const_iterator cend() const;
+    const_iterator cend() const noexcept;
 
     /**
      * @brief Returns a reverse iterator to the first element of the reversed
@@ -1085,7 +1085,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(1)
      */
-    reverse_iterator rbegin();
+    reverse_iterator rbegin() noexcept;
     /**
      * @brief Returns a const reverse iterator to the first element of the
      * reversed container. It corresponds to the last element of the
@@ -1093,7 +1093,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(1)
      */
-    const_reverse_iterator rbegin() const;
+    const_reverse_iterator rbegin() const noexcept;
     /**
      * @brief Returns a const reverse iterator to the first element of the
      * reversed container. It corresponds to the last element of the
@@ -1101,7 +1101,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(1)
      */
-    const_reverse_iterator crbegin() const;
+    const_reverse_iterator crbegin() const noexcept;
     /**
      * @brief Returns a past-the-end reverse iterator.
      * It corresponds to the element preceeding the first element of the
@@ -1109,7 +1109,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    reverse_iterator rend();
+    reverse_iterator rend() noexcept;
     /**
      * @brief Returns a past-the-end const reverse iterator.
      * It corresponds to the element preceeding the first element of the
@@ -1117,7 +1117,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    const_reverse_iterator rend() const;
+    const_reverse_iterator rend() const noexcept;
     /**
      * @brief Returns a past-the-end const reverse iterator.
      * It corresponds to the element preceeding the first element of the
@@ -1125,7 +1125,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    const_reverse_iterator crend() const;
+    const_reverse_iterator crend() const noexcept;
 
     /**
      * @brief Returns an iterator to element at given position.
@@ -1153,14 +1153,14 @@ class indexed_list {
      * @detail
      * @b Complexity: O(1)
      */
-    bool empty() const;
+    bool empty() const noexcept;
     /**
      * @brief Returns size of the container
      * @return Number of elements in the container
      * @detail
      * @b Complexity: O(1)
      */
-    size_type size() const;
+    size_type size() const noexcept;
 
     ////////////////////////////////////////////////////////////////////////////
     //                              Modifiers                                 //
@@ -1170,7 +1170,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O((*this).size())
      */
-    void clear();
+    void clear() noexcept;
     /**
      * @brief Inserts a new element at the specified location in the container.
      * @param pos Iterator before which the element will be inserted. Might be
@@ -1326,7 +1326,7 @@ class indexed_list {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    void concat(indexed_list&& other);
+    void concat(indexed_list&& other) noexcept;
     /**
      * @brief Merges in the content of `other` at given position.
      * @param other Other container, its content will be moved to this container
@@ -1432,9 +1432,9 @@ class indexed_list {
     RNG rng_;
 };
 
-// VS intellisense doesn't like  = defult, so...
+// VS intellisense doesn't like noexcept = defult, so...
 template <typename T>
-inline indexed_list<T>::indexed_list(){};
+inline indexed_list<T>::indexed_list() noexcept {};
 
 template <typename T>
 template <class InputIt>
@@ -1451,7 +1451,7 @@ inline indexed_list<T>::indexed_list(const indexed_list& other) {
 }
 
 template <typename T>
-inline indexed_list<T>::indexed_list(indexed_list&& other) {
+inline indexed_list<T>::indexed_list(indexed_list&& other) noexcept {
     INDEXED_LIST_CONTRACT_ASSERT(&other != this,
                                  "You can't initialize an item with itself");
     impl_.takeOwnership(std::move(other.impl_));
@@ -1472,7 +1472,7 @@ indexed_list<T>::operator=(const indexed_list& other) {
 
 template <typename T>
 inline indexed_list<T>&  //
-indexed_list<T>::operator=(indexed_list&& other) {
+indexed_list<T>::operator=(indexed_list&& other) noexcept {
     if (&other == this)
         return *this;
 
@@ -1516,73 +1516,73 @@ indexed_list<T>::operator[](size_type pos) const {
 
 template <typename T>
 inline typename indexed_list<T>::iterator  //
-indexed_list<T>::begin() {
+indexed_list<T>::begin() noexcept {
     return iterator(impl_.getFirstNode());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_iterator  //
-indexed_list<T>::begin() const {
+indexed_list<T>::begin() const noexcept {
     return const_iterator(impl_.getFirstNode());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_iterator  //
-indexed_list<T>::cbegin() const {
+indexed_list<T>::cbegin() const noexcept {
     return begin();
 }
 
 template <typename T>
 inline typename indexed_list<T>::iterator  //
-indexed_list<T>::end() {
+indexed_list<T>::end() noexcept {
     return iterator(impl_.getHeadNode());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_iterator  //
-indexed_list<T>::end() const {
+indexed_list<T>::end() const noexcept {
     return const_iterator(impl_.getHeadNode());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_iterator  //
-indexed_list<T>::cend() const {
+indexed_list<T>::cend() const noexcept {
     return end();
 }
 
 template <typename T>
 inline typename indexed_list<T>::reverse_iterator  //
-indexed_list<T>::rbegin() {
+indexed_list<T>::rbegin() noexcept {
     return reverse_iterator(end());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_reverse_iterator  //
-indexed_list<T>::rbegin() const {
+indexed_list<T>::rbegin() const noexcept {
     return const_reverse_iterator(end());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_reverse_iterator  //
-indexed_list<T>::crbegin() const {
+indexed_list<T>::crbegin() const noexcept {
     return rbegin();
 }
 
 template <typename T>
 inline typename indexed_list<T>::reverse_iterator  //
-indexed_list<T>::rend() {
+indexed_list<T>::rend() noexcept {
     return reverse_iterator(begin());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_reverse_iterator  //
-indexed_list<T>::rend() const {
+indexed_list<T>::rend() const noexcept {
     return const_reverse_iterator(begin());
 }
 
 template <typename T>
 inline typename indexed_list<T>::const_reverse_iterator  //
-indexed_list<T>::crend() const {
+indexed_list<T>::crend() const noexcept {
     return rend();
 }
 
@@ -1603,19 +1603,19 @@ indexed_list<T>::iterator_at(size_type pos) const {
 
 template <typename T>
 inline bool  //
-indexed_list<T>::empty() const {
+indexed_list<T>::empty() const noexcept {
     return impl_.isEmpty();
 }
 
 template <typename T>
 inline typename indexed_list<T>::size_type  //
-indexed_list<T>::size() const {
+indexed_list<T>::size() const noexcept {
     return impl_.size();
 }
 
 template <typename T>
 inline void  //
-indexed_list<T>::clear() {
+indexed_list<T>::clear() noexcept {
     auto eraser = getNodeEraser();
     impl_.clear(eraser);
 }
@@ -1761,7 +1761,7 @@ indexed_list<T>::split_at(size_type pos_first, size_type pos_last) {
 
 template <typename T>
 inline void  //
-indexed_list<T>::concat(indexed_list&& other) {
+indexed_list<T>::concat(indexed_list&& other) noexcept {
     impl_.concat(other.impl_.extractAll());
 }
 
