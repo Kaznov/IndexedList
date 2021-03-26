@@ -1,7 +1,7 @@
 #ifndef INDEXED_LIST_H_
 #define INDEXED_LIST_H_
 
-// IndexedList library - open-source, single-header library for C++14
+// indexed_list - open-source, single-header library for C++14
 // It provides an stl-compatibile sequence container with O(log n) positional
 // operations, splicing and merging. It is distributed under MIT License.
 //
@@ -905,25 +905,25 @@ using IndexedListConstIterator =
  * attack against the RNG and increase the tree height up to O(n). In this case,
  * it may result in stack overflow, as some of the operations are recursive.
  *
- * IndexedList is NOT allocator-aware. Internally it uses std::allocator.
+ * indexed_list is NOT allocator-aware. Internally it uses std::allocator.
  *
- * IndexedList does NOT give any exception quarantees. If an allocation,
+ * indexed_list does NOT give any exception quarantees. If an allocation,
  * object constructor or assignment throws, the object might enter invalid state
  * and program has an Undefined Behaviour. You are on your own. It is planned
  * to add exceptions guarantees in the future.
  *
- * IndexedList does NOT meet the requirements of SequenceContainer, even though
+ * indexed_list does NOT meet the requirements of SequenceContainer, even though
  * logically it is a sequence container. I don't agree with some API decisions,
  * especially with "repeat n times" insertions and std::initializer_list.
  *
  * Public methods check most preconditions as assertions.
  *
  * <b> C++20 Concepts</b>
- * IndexedList models std::bidirectional_range and std::sized_range concepts.
+ * indexed_list models std::bidirectional_range and std::sized_range concepts.
  * Iterators model std::bidirectional_iterator concept.
  */
 template <typename T>
-class IndexedList {
+class indexed_list {
   private:
     static_assert(!std::is_const<T>::value,
                   "Container must have a non-const value type");
@@ -932,9 +932,12 @@ class IndexedList {
     static_assert(
         !std::is_reference<T>::value,
         "Cannot create a container of references, use std::reference_wrapper");
+    static_assert(
+        std::is_nothrow_destructible<T>::value,
+        "Elements stored in the container must be nothrow-destructuble");
 
     using Impl      = detail::SequencedTreap;
-    using this_type = IndexedList;
+    using this_type = indexed_list;
 
   public:
     using value_type      = T;
@@ -957,7 +960,7 @@ class IndexedList {
     /**
      * @brief Creates an empty container
      */
-    IndexedList();
+    indexed_list();
     /**
      * @brief Constructs container from range [`first`, `last`)
      * @tparam InputIt Iterator type, must model LegacyInputIterator
@@ -968,41 +971,41 @@ class IndexedList {
      * `first` and `last`
      */
     template <class InputIt>
-    IndexedList(InputIt first, InputIt last);
+    indexed_list(InputIt first, InputIt last);
 
     /**
      * @brief Constructs a copy of `other` container
-     * @param other IndexedList to be cloned
+     * @param other indexed_list to be cloned
      * @detail
      * @b Complexity: O(other.size())
      */
-    IndexedList(const IndexedList& other);
+    indexed_list(const indexed_list& other);
     /**
      * @brief Constructs container by taking ownership of the elements of the
      * `other` container. The `other` container becomes empty in the process.
-     * @param other Rvalue to other IndexedList
+     * @param other Rvalue to other indexed_list
      * @detail
      * @b Complexity: O(1)
      */
-    IndexedList(IndexedList&& other);
+    indexed_list(indexed_list&& other);
     /**
      * @brief Replaces content of `*this` with copy of content of the `other`.
      * All the elements currently stored in `*this` are discarded.
-     * @param other IndexedList to be cloned
+     * @param other indexed_list to be cloned
      * @detail
      * @b Complexity: O((*this).size() + other.size())
      */
-    IndexedList& operator=(const IndexedList& other);
+    indexed_list& operator=(const indexed_list& other);
     /**
      * @brief Replaces content of `*this` with content of the`other`.
      * All the elements currently stored in `*this` are discarded.
      * `other` becomes empty in the process.
-     * @param other Rvalue to other IndexedList
+     * @param other Rvalue to other indexed_list
      * @detail
      * @b Complexity: O((*this).size() + 1)
      */
-    IndexedList& operator=(IndexedList&& other);
-    ~IndexedList();
+    indexed_list& operator=(indexed_list&& other);
+    ~indexed_list();
 
     /**
      * @brief Replaces content of `*this` with content of the range
@@ -1282,7 +1285,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    IndexedList split(const_iterator first);
+    indexed_list split(const_iterator first);
     /**
      * @brief Splits container into two. Elements from range described by
      * input parameters will be moved to a new container.
@@ -1292,7 +1295,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    IndexedList split(const_iterator first, const_iterator last);
+    indexed_list split(const_iterator first, const_iterator last);
     /**
      * @brief Splits container into two. Elements from position `pos_first`
      * onward will be moved to a new container.
@@ -1302,7 +1305,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    IndexedList split_at(size_type pos_first);
+    indexed_list split_at(size_type pos_first);
     /**
      * @brief Splits container into two. Elements from positions in range
      * described by input parameters will be moved to to a new container.
@@ -1314,7 +1317,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    IndexedList split_at(size_type pos_first, size_type pos_last);
+    indexed_list split_at(size_type pos_first, size_type pos_last);
 
     /**
      * @brief Places content of the `other` at the end of `*this`. Equivalent to
@@ -1323,7 +1326,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    void concat(IndexedList&& other);
+    void concat(indexed_list&& other);
     /**
      * @brief Merges in the content of `other` at given position.
      * @param other Other container, its content will be moved to this container
@@ -1332,7 +1335,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    void merge(IndexedList&& other, const_iterator pos);
+    void merge(indexed_list&& other, const_iterator pos);
     /**
      * @brief Merges in the content of `other` at given position.
      * @param other Other container, its content will be moved to this container
@@ -1341,7 +1344,7 @@ class IndexedList {
      * @detail
      * @b Complexity: O(log((*this).size()))
      */
-    void merge_at(IndexedList&& other, size_type pos);
+    void merge_at(indexed_list&& other, size_type pos);
 
 #if defined(INDEXED_LIST_TESTING)
     void checkTreeIsValid();
@@ -1429,17 +1432,18 @@ class IndexedList {
     RNG rng_;
 };
 
+// VS intellisense doesn't like  = defult, so...
 template <typename T>
-inline IndexedList<T>::IndexedList() = default;
+inline indexed_list<T>::indexed_list(){};
 
 template <typename T>
 template <class InputIt>
-inline IndexedList<T>::IndexedList(InputIt first, InputIt last) {
+inline indexed_list<T>::indexed_list(InputIt first, InputIt last) {
     assign(first, last);
 }
 
 template <typename T>
-inline IndexedList<T>::IndexedList(const IndexedList& other) {
+inline indexed_list<T>::indexed_list(const indexed_list& other) {
     INDEXED_LIST_CONTRACT_ASSERT(&other != this,
                                  "You can't initialize an item with itself");
     auto cloner = getNodeCloner();
@@ -1447,15 +1451,15 @@ inline IndexedList<T>::IndexedList(const IndexedList& other) {
 }
 
 template <typename T>
-inline IndexedList<T>::IndexedList(IndexedList&& other) {
+inline indexed_list<T>::indexed_list(indexed_list&& other) {
     INDEXED_LIST_CONTRACT_ASSERT(&other != this,
                                  "You can't initialize an item with itself");
     impl_.takeOwnership(std::move(other.impl_));
 }
 
 template <typename T>
-inline IndexedList<T>&  //
-IndexedList<T>::operator=(const IndexedList& other) {
+inline indexed_list<T>&  //
+indexed_list<T>::operator=(const indexed_list& other) {
     if (&other == this)
         return *this;
 
@@ -1467,8 +1471,8 @@ IndexedList<T>::operator=(const IndexedList& other) {
 }
 
 template <typename T>
-inline IndexedList<T>&  //
-IndexedList<T>::operator=(IndexedList&& other) {
+inline indexed_list<T>&  //
+indexed_list<T>::operator=(indexed_list&& other) {
     if (&other == this)
         return *this;
 
@@ -1479,14 +1483,14 @@ IndexedList<T>::operator=(IndexedList&& other) {
 }
 
 template <typename T>
-inline IndexedList<T>::~IndexedList() {
+inline indexed_list<T>::~indexed_list() {
     clear();
 }
 
 template <typename T>
 template <class InputIt>
 inline void  //
-IndexedList<T>::assign(InputIt first, InputIt last) {
+indexed_list<T>::assign(InputIt first, InputIt last) {
     static_assert(std::is_constructible<T, decltype(*first)>::value,
                   "Cannot construct container object from given iterator");
     checkIteratorNotFromContainer(first, last);
@@ -1497,128 +1501,128 @@ IndexedList<T>::assign(InputIt first, InputIt last) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::reference  //
-IndexedList<T>::operator[](size_type pos) {
+inline typename indexed_list<T>::reference  //
+indexed_list<T>::operator[](size_type pos) {
     checkIndexIsValid(pos);
     return getFullNode(impl_.getNthNode(pos)).value;
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_reference  //
-IndexedList<T>::operator[](size_type pos) const {
+inline typename indexed_list<T>::const_reference  //
+indexed_list<T>::operator[](size_type pos) const {
     checkIndexIsValid(pos);
     return getFullNode(impl_.getNthNode(pos)).value;
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::begin() {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::begin() {
     return iterator(impl_.getFirstNode());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_iterator  //
-IndexedList<T>::begin() const {
+inline typename indexed_list<T>::const_iterator  //
+indexed_list<T>::begin() const {
     return const_iterator(impl_.getFirstNode());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_iterator  //
-IndexedList<T>::cbegin() const {
+inline typename indexed_list<T>::const_iterator  //
+indexed_list<T>::cbegin() const {
     return begin();
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::end() {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::end() {
     return iterator(impl_.getHeadNode());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_iterator  //
-IndexedList<T>::end() const {
+inline typename indexed_list<T>::const_iterator  //
+indexed_list<T>::end() const {
     return const_iterator(impl_.getHeadNode());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_iterator  //
-IndexedList<T>::cend() const {
+inline typename indexed_list<T>::const_iterator  //
+indexed_list<T>::cend() const {
     return end();
 }
 
 template <typename T>
-inline typename IndexedList<T>::reverse_iterator  //
-IndexedList<T>::rbegin() {
+inline typename indexed_list<T>::reverse_iterator  //
+indexed_list<T>::rbegin() {
     return reverse_iterator(end());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_reverse_iterator  //
-IndexedList<T>::rbegin() const {
+inline typename indexed_list<T>::const_reverse_iterator  //
+indexed_list<T>::rbegin() const {
     return const_reverse_iterator(end());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_reverse_iterator  //
-IndexedList<T>::crbegin() const {
+inline typename indexed_list<T>::const_reverse_iterator  //
+indexed_list<T>::crbegin() const {
     return rbegin();
 }
 
 template <typename T>
-inline typename IndexedList<T>::reverse_iterator  //
-IndexedList<T>::rend() {
+inline typename indexed_list<T>::reverse_iterator  //
+indexed_list<T>::rend() {
     return reverse_iterator(begin());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_reverse_iterator  //
-IndexedList<T>::rend() const {
+inline typename indexed_list<T>::const_reverse_iterator  //
+indexed_list<T>::rend() const {
     return const_reverse_iterator(begin());
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_reverse_iterator  //
-IndexedList<T>::crend() const {
+inline typename indexed_list<T>::const_reverse_iterator  //
+indexed_list<T>::crend() const {
     return rend();
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::iterator_at(size_type pos) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::iterator_at(size_type pos) {
     checkIndexIsValidInclusive(pos);
 
     return iterator(impl_.getNthNode(pos));
 }
 
 template <typename T>
-inline typename IndexedList<T>::const_iterator  //
-IndexedList<T>::iterator_at(size_type pos) const {
+inline typename indexed_list<T>::const_iterator  //
+indexed_list<T>::iterator_at(size_type pos) const {
     checkIndexIsValidInclusive(pos);
     return const_iterator(impl_.getNthNode(pos));
 }
 
 template <typename T>
 inline bool  //
-IndexedList<T>::empty() const {
+indexed_list<T>::empty() const {
     return impl_.isEmpty();
 }
 
 template <typename T>
-inline typename IndexedList<T>::size_type  //
-IndexedList<T>::size() const {
+inline typename indexed_list<T>::size_type  //
+indexed_list<T>::size() const {
     return impl_.size();
 }
 
 template <typename T>
 inline void  //
-IndexedList<T>::clear() {
+indexed_list<T>::clear() {
     auto eraser = getNodeEraser();
     impl_.clear(eraser);
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::insert(const_iterator pos, const value_type& value) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::insert(const_iterator pos, const value_type& value) {
     checkIteratorIsValid(pos);
 
     NodeBase* node     = getNewNode(value);
@@ -1628,8 +1632,8 @@ IndexedList<T>::insert(const_iterator pos, const value_type& value) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::insert(const_iterator pos, value_type&& value) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::insert(const_iterator pos, value_type&& value) {
     checkIteratorIsValid(pos);
 
     NodeBase* node     = getNewNode(std::move(value));
@@ -1639,23 +1643,23 @@ IndexedList<T>::insert(const_iterator pos, value_type&& value) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::insert_at(size_type pos, const value_type& value) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::insert_at(size_type pos, const value_type& value) {
     checkIndexIsValidInclusive(pos);
     return insert(iterator_at(pos), value);
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::insert_at(size_type pos, value_type&& value) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::insert_at(size_type pos, value_type&& value) {
     checkIndexIsValidInclusive(pos);
     return insert(iterator_at(pos), std::move(value));
 }
 
 template <typename T>
 template <class... Args>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::emplace(const_iterator pos, Args&&... args) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::emplace(const_iterator pos, Args&&... args) {
     checkIteratorIsValid(pos);
     NodeBase* node     = getNewNode(std::forward<Args>(args)...);
     NodeBase* pos_node = getNotConstNode(pos.node_);
@@ -1665,15 +1669,15 @@ IndexedList<T>::emplace(const_iterator pos, Args&&... args) {
 
 template <typename T>
 template <class... Args>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::emplace_at(size_type pos, Args&&... args) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::emplace_at(size_type pos, Args&&... args) {
     checkIndexIsValidInclusive(pos);
     return emplace(iterator_at(pos), std::forward<Args>(args)...);
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::erase(const_iterator pos) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::erase(const_iterator pos) {
     checkIteratorIsValid(pos);
     INDEXED_LIST_CONTRACT_ASSERT(pos != end(), "Cannot erase end iterator");
     NodeBase* node        = getNotConstNode(pos);
@@ -1683,8 +1687,8 @@ IndexedList<T>::erase(const_iterator pos) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::erase(const_iterator first, const_iterator last) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::erase(const_iterator first, const_iterator last) {
     checkIteratorIsValid(first);
     checkIteratorIsValid(last);
     checkIteratorsInOrder(first, last);
@@ -1697,15 +1701,15 @@ IndexedList<T>::erase(const_iterator first, const_iterator last) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::erase_at(size_type pos) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::erase_at(size_type pos) {
     checkIndexIsValid(pos);
     return erase(iterator_at(pos));
 }
 
 template <typename T>
-inline typename IndexedList<T>::iterator  //
-IndexedList<T>::erase_at(size_type pos_first, size_type pos_last) {
+inline typename indexed_list<T>::iterator  //
+indexed_list<T>::erase_at(size_type pos_first, size_type pos_last) {
     checkIndexIsValidInclusive(pos_first);
     checkIndexIsValidInclusive(pos_last);
     checkIndexesInOrder(pos_first, pos_last);
@@ -1714,24 +1718,24 @@ IndexedList<T>::erase_at(size_type pos_first, size_type pos_last) {
 }
 
 template <typename T>
-inline IndexedList<T>  //
-IndexedList<T>::split(const_iterator first) {
+inline indexed_list<T>  //
+indexed_list<T>::split(const_iterator first) {
     checkIteratorIsValid(first);
     if (first == end())
         return {};
     NodeBase* pos_node = getNotConstNode(first);
-    IndexedList right_part;
+    indexed_list right_part;
     right_part.impl_.concat(impl_.split(pos_node));
     return right_part;
 }
 
 template <typename T>
-inline IndexedList<T>  //
-IndexedList<T>::split(const_iterator first, const_iterator last) {
+inline indexed_list<T>  //
+indexed_list<T>::split(const_iterator first, const_iterator last) {
     checkIteratorIsValid(first);
     checkIteratorIsValid(last);
     checkIteratorsInOrder(first, last);
-    IndexedList right_part = split(first);
+    indexed_list right_part = split(first);
     if (last == end())
         return right_part;
     NodeBase* pos_node = getNotConstNode(last);
@@ -1740,15 +1744,15 @@ IndexedList<T>::split(const_iterator first, const_iterator last) {
 }
 
 template <typename T>
-inline IndexedList<T>  //
-IndexedList<T>::split_at(size_type pos_first) {
+inline indexed_list<T>  //
+indexed_list<T>::split_at(size_type pos_first) {
     checkIndexIsValidInclusive(pos_first);
     return split(iterator_at(pos_first));
 }
 
 template <typename T>
-inline IndexedList<T>  //
-IndexedList<T>::split_at(size_type pos_first, size_type pos_last) {
+inline indexed_list<T>  //
+indexed_list<T>::split_at(size_type pos_first, size_type pos_last) {
     checkIndexIsValidInclusive(pos_first);
     checkIndexIsValidInclusive(pos_last);
     checkIndexesInOrder(pos_first, pos_last);
@@ -1757,13 +1761,13 @@ IndexedList<T>::split_at(size_type pos_first, size_type pos_last) {
 
 template <typename T>
 inline void  //
-IndexedList<T>::concat(IndexedList&& other) {
+indexed_list<T>::concat(indexed_list&& other) {
     impl_.concat(other.impl_.extractAll());
 }
 
 template <typename T>
 inline void  //
-IndexedList<T>::merge(IndexedList&& other, const_iterator pos) {
+indexed_list<T>::merge(indexed_list&& other, const_iterator pos) {
     checkIteratorIsValid(pos);
     NodeBase* pos_node   = getNotConstNode(pos);
     NodeBase* right_part = impl_.split(pos_node);
@@ -1773,7 +1777,7 @@ IndexedList<T>::merge(IndexedList&& other, const_iterator pos) {
 
 template <typename T>
 inline void  //
-IndexedList<T>::merge_at(IndexedList&& other, size_type pos) {
+indexed_list<T>::merge_at(indexed_list&& other, size_type pos) {
     checkIndexIsValidInclusive(pos);
     return merge(std::move(other), iterator_at(pos));
 }
@@ -1788,7 +1792,7 @@ IndexedList<T>::checkTreeIsValid() {
 
 template <typename T>
 inline void  //
-IndexedList<T>::checkIndexesInOrder(size_type pos1, size_type pos2) const {
+indexed_list<T>::checkIndexesInOrder(size_type pos1, size_type pos2) const {
     INDEXED_LIST_CONTRACT_ASSERT(
         pos1 <= pos2, "Second index of the pair is lower than the first");
     (void)pos1;
@@ -1797,22 +1801,22 @@ IndexedList<T>::checkIndexesInOrder(size_type pos1, size_type pos2) const {
 
 template <typename T>
 inline void  //
-IndexedList<T>::checkIndexIsValid(size_type pos) const {
+indexed_list<T>::checkIndexIsValid(size_type pos) const {
     INDEXED_LIST_CONTRACT_ASSERT(pos < size(), "Index outside of valid range");
     (void)pos;
 }
 
 template <typename T>
 inline void  //
-IndexedList<T>::checkIndexIsValidInclusive(size_type pos) const {
+indexed_list<T>::checkIndexIsValidInclusive(size_type pos) const {
     INDEXED_LIST_CONTRACT_ASSERT(pos <= size(), "Index outside of valid range");
     (void)pos;
 }
 
 template <typename T>
 inline void  //
-IndexedList<T>::checkIteratorsInOrder(const_iterator it1,
-                                      const_iterator it2) const {
+indexed_list<T>::checkIteratorsInOrder(const_iterator it1,
+                                       const_iterator it2) const {
     INDEXED_LIST_CONTRACT_ASSERT(
         it1 <= it2,
         "Second iterator of the pair is earlier in container than the first");
@@ -1822,7 +1826,7 @@ IndexedList<T>::checkIteratorsInOrder(const_iterator it1,
 
 template <typename T>
 inline void  //
-IndexedList<T>::checkIteratorIsValid(const_iterator it) const {
+indexed_list<T>::checkIteratorIsValid(const_iterator it) const {
     INDEXED_LIST_CONTRACT_ASSERT(it.node_->getTreeHead() == impl_.getHeadNode(),
                                  "Iterator does not belong to this container");
     (void)it;
@@ -1831,8 +1835,8 @@ IndexedList<T>::checkIteratorIsValid(const_iterator it) const {
 template <typename T>
 template <typename InputIt>
 inline void  //
-IndexedList<T>::checkIteratorNotFromContainer(InputIt first,
-                                              InputIt last) const {
+indexed_list<T>::checkIteratorNotFromContainer(InputIt first,
+                                               InputIt last) const {
 // I don't even hope that the optimizer will remove it by itself
 #if defined(INDEXED_LIST_CHECK_PRECONDITIONS)
     auto getAddress = [](auto&& v) { return &v; };
@@ -1849,21 +1853,21 @@ IndexedList<T>::checkIteratorNotFromContainer(InputIt first,
 
 // static
 template <typename T>
-inline const typename IndexedList<T>::Node&  //
-IndexedList<T>::getFullNode(const NodeBase* node) {
+inline const typename indexed_list<T>::Node&  //
+indexed_list<T>::getFullNode(const NodeBase* node) {
     return static_cast<const Node&>(*node);
 }
 
 // static
 template <typename T>
-inline typename IndexedList<T>::Node&  //
-IndexedList<T>::getFullNode(NodeBase* node) {
+inline typename indexed_list<T>::Node&  //
+indexed_list<T>::getFullNode(NodeBase* node) {
     return static_cast<Node&>(*node);
 }
 
 template <typename T>
 inline void  //
-IndexedList<T>::clearNode(NodeBase* node) {
+indexed_list<T>::clearNode(NodeBase* node) {
     auto&& aloc     = getAllocator();
     Node* full_node = &getFullNode(node);
     std::allocator_traits<real_allocator_type>::destroy(aloc,
@@ -1872,8 +1876,8 @@ IndexedList<T>::clearNode(NodeBase* node) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::NodeBase*  //
-IndexedList<T>::cloneNode(const NodeBase* node) {
+inline typename indexed_list<T>::NodeBase*  //
+indexed_list<T>::cloneNode(const NodeBase* node) {
     auto&& aloc      = getAllocator();
     Node* new_node   = aloc.allocate(1);
     new_node->weight = node->weight;
@@ -1882,15 +1886,15 @@ IndexedList<T>::cloneNode(const NodeBase* node) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::real_allocator_type  //
-IndexedList<T>::getAllocator() {
+inline typename indexed_list<T>::real_allocator_type  //
+indexed_list<T>::getAllocator() {
     return real_allocator_type();
 }
 
 template <typename T>
 template <typename... Args>
-inline typename IndexedList<T>::NodeBase*  //
-IndexedList<T>::getNewNode(Args&&... args) {
+inline typename indexed_list<T>::NodeBase*  //
+indexed_list<T>::getNewNode(Args&&... args) {
     auto&& aloc = getAllocator();
     Node* node  = aloc.allocate(1);
     std::allocator_traits<real_allocator_type>::construct(
@@ -1904,8 +1908,8 @@ IndexedList<T>::getNewNode(Args&&... args) {
 }
 
 template <typename T>
-inline typename IndexedList<T>::NodeBase*  //
-IndexedList<T>::getNotConstNode(const_iterator it) {
+inline typename indexed_list<T>::NodeBase*  //
+indexed_list<T>::getNotConstNode(const_iterator it) {
     // This const_cast is valid, because:
     // 1. pos is an iterator to this container
     // 2. we are inside a non-const method, so this container isn't const

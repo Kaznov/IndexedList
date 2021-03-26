@@ -20,31 +20,31 @@
 #include <ranges>
 
 static_assert(
-    std::bidirectional_iterator<indexed_list::IndexedList<int>::iterator>,
-    "IndexedList iterator must model std::bidirectional_iterator ");
+    std::bidirectional_iterator<indexed_list::indexed_list<int>::iterator>,
+    "indexed_list iterator must model std::bidirectional_iterator ");
 
 static_assert(
-    std::bidirectional_iterator<indexed_list::IndexedList<int>::const_iterator>,
-    "IndexedList const_iterator must model std::bidirectional_iterator");
+    std::bidirectional_iterator<indexed_list::indexed_list<int>::const_iterator>,
+    "indexed_list const_iterator must model std::bidirectional_iterator");
 
 static_assert(
     std::bidirectional_iterator<
-        indexed_list::IndexedList<int>::reverse_iterator>,
-    "IndexedList reverse_iterator must model std::bidirectional_iterator ");
+        indexed_list::indexed_list<int>::reverse_iterator>,
+    "indexed_list reverse_iterator must model std::bidirectional_iterator ");
 
 static_assert(std::bidirectional_iterator<
-                  indexed_list::IndexedList<int>::const_reverse_iterator>,
-              "IndexedList const_reverse_iterator must model "
+                  indexed_list::indexed_list<int>::const_reverse_iterator>,
+              "indexed_list const_reverse_iterator must model "
               "std::bidirectional_iterator");
 
-static_assert(std::ranges::sized_range<indexed_list::IndexedList<int>>,
-              "IndexedList must model std::sized_range");
+static_assert(std::ranges::sized_range<indexed_list::indexed_list<int>>,
+              "indexed_list must model std::sized_range");
 
-static_assert(std::ranges::bidirectional_range<indexed_list::IndexedList<int>>,
-              "IndexedList must model std::bidirectional_range");
+static_assert(std::ranges::bidirectional_range<indexed_list::indexed_list<int>>,
+              "indexed_list must model std::bidirectional_range");
 
-static_assert(std::ranges::output_range<indexed_list::IndexedList<int>, int>,
-              "IndexedList must model std::output_range");
+static_assert(std::ranges::output_range<indexed_list::indexed_list<int>, int>,
+              "indexed_list must model std::output_range");
 
 #endif
 
@@ -97,7 +97,7 @@ using MOT = MoveOnlyType;
 using COT = CreateOnlyType;
 
 template <typename T>
-using IL = indexed_list::IndexedList<T>;
+using IL = indexed_list::indexed_list<T>;
 
 void indexedListConstructors() {
     // default constructor
