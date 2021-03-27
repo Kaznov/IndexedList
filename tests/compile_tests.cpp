@@ -1,7 +1,7 @@
 // This file contains a bunch of static assertions and compilation checks
 // It should not be executed
 
-#include "IndexedList.h"
+#include "indexed_list.h"
 
 #include <iterator>
 #include <type_traits>
